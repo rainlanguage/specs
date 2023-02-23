@@ -42,22 +42,113 @@ Meta is a self describing document in three ways:
   that can be read by tooling in O(1) as a signal of intent for the payload
   _without_ needing to first parse (and possibly decompress) the entire payload
 
-### Magic number
+### Magic numbers
 
-The magic number facilitates portability allowing tooling to identify with
-high confidence that some data is intended to be interpreted as meta
-regardless of where it may be emitted onchain in some event or found
-elsewhere.
+Magic numbers a.k.a. domain separators facilitate portability allowing tooling
+to identify with high confidence that some data is intended to be interpreted in
+some way regardless of where it may be found in the wild and what anyone else on
+the planet might be doing with their data.
 
-The magic number mimics ERC165 interface function signature calculation
-using 8 bytes instead of 4 bytes for additional collision resistance. The
-string used for the hashing is utf-8 `rain-meta-v1` and can be calculated as
+Spiritually similar to UUIDs and cryptographic hashes the basic intuition is
+that if some value is sufficiently unpredictable in the face of someone
+deliberately trying to brute force it, then it is even more unlikely to collide
+with people merely accidentally building similar systems concurrently.
+
+It's important to understand that simply hashing some value doesn't provide
+any collision resistance at all relative to the raw strings/data if it's likely
+that other people will be writing similar code with the same hashing algorithm.
+In the context of Solidity this is very likely as `keccak256` is enshrined in an
+onchain EVM opcode.
+
+The [pidgeonhole principle](https://en.wikipedia.org/wiki/Pigeonhole_principle)
+tells us that any hashing scheme actually makes collisions _more_ likely than
+merely preserving all possible unique inputs.
+The [birthday problem](https://en.wikipedia.org/wiki/Birthday_problem) tells us
+that the chance of there being _any_ collision within a set of randomly
+distributed values is far higher than intuitively seems possible, e.g. there is
+a 50% that two people will share the same birthday with only 23 people sampled.
+
+So why does anyone ever hash data to produce magic numbers if the original data
+was _more_ collision resistant?
+
+- Hashes reliably fill a known number of bytes e.g. keccak256 -> 32 bytes always.
+- Arbitrarily truncating/sampling a high quality hash to fewer bytes doesn't
+  introduce statistical biases, unlike e.g. UUIDs that have fixed values at
+  certain bits to denote UUID version etc.
+
+In this case however, there is no reason to try to _derive_ some magic number at
+all (c.f. ERC165 4 byte interface function signatures). We get the best possible
+guarantee of collision resistance by simply generating random bytes of the
+desired size and publishing it alongside the standard. This isn't a cryptographic
+primitive, there's nothing to "backdoor", it's a mere convention that tells a
+decoder at a glance that some data MAY be relevant.
+
+By starting the binary form of the magic number with `0xFF` we can ensure it is
+NOT a valid utf-8 byte sequence, which MAY futher aid arbitrary decoders to drop
+rain metadata unless it intentionaly wants to handle it. However, it is
+NOT RECOMMENDED to point decoders at user data on a decentralised ledger if that
+data is not self describing as this has a high probability of misinterpreting
+the intent of the sender.
+
+The magic number for the first 8 bytes of rain meta is
+
 ```
-bytes8(keccak256(abi.encodePacked("rain-meta-v1")));
+0xff0a89c674ee7874
 ```
+
+Which was obtained by running
+
+```
+openssl rand -hex 8
+```
+
+Then manually setting the leading bytes to `0xff`.
+
+Don't believe me? Doesn't matter. It's a convention, not a security guarantee.
+
+A quick google shows zero results, so it's unlikely to collide with any other
+value used elsewhere.
 
 Tooling that wishes to read meta MUST discard/ignore all binary data that
 does not begin with the magic number.
+
+#### Trustlessness and extensibility of magic numbers
+
+There is no registry of magic numbers for rain meta. If you want to prefix valid
+meta with some other magic number when you encode it, go for it, but very likely
+no decoder will accept it.
+
+The degree to which any magic number or other convention in this document is
+"official" or enforceable essentially comes down to
+
+- The tooling that the community uses needs _some_
+  [schelling point](https://en.wikipedia.org/wiki/Focal_point_(game_theory))
+  out of pure practicality, otherwise opportunities to compose efforts will be
+  lost in the sea of all possible binary data strings
+- If there's a deliberate or accidental collision then tooling will tend to break
+  in subtle ways. Devs _hate_ it when their code breaks in subtle ways, so tool
+  maintainers will probably outright reject one or both encodings by _social_
+  consensus (e.g. they will simply talk to each other and figure it out, or drop
+  anything they don't personally want to support)
+
+CBOR and IANA already maintain enough centralised structures for lightweight and
+flexible encoders and decoders to be written (and have already been written in
+every major language). We should focus on curation of all 8 byte numbers at the
+social layer to allow actual applications to be written on a globally shared data
+repository (the blockchain).
+
+Here is a table of magic numbers that the tooling maintained by the authors of
+this document are already handling.
+
+| Number             | Interpretation                    |
+| ---                | ---                               |
+| 0xff0a89c674ee7874 | Prefixes every rain meta document |
+| 0xffe5ffb4a3ff2cde | Solidity ABIv2                    |
+| 0xffe5282f43e495b4 | Ops meta v1                       |
+| 0xffc21bbf86cc199b | Contract meta v1                  |
+
+This document will be updated as new numbers become known but also feel free to
+build systems and applications with your own numbers and interpretations.
 
 ### RFC8742 CBOR sequence (uncompressed)
 
@@ -132,3 +223,19 @@ strings and integer keys onchain for redundant information.
 | 3     | Alias for `Content-Type`        |
 | 4     | Alias for `Content-Language`    |
 
+Indexes 0-3 inclusive are MANDATORY and any CBOR item that omits these keys MUST
+be treated as unexpected (cbor terminology) and dropped/ignored.
+
+This structure as presented could have been more concisely represented as a
+sequence rather than a key/value map but this would have several disadvantages
+
+- It is awkward to express optional values in a sequence
+- It would be more difficult to represent new indexes that we MAY want to add in
+  the future
+- It would be more difficult to remove/deprecate indexes in the future
+- It would be difficult or impossible to represent large valued indexes such as
+  an 8-byte magic number or a string key
+
+In summary the map structure is chosen to facilitate future modifications to the
+conventions in this document in a way that tooling can adopt (or not) in a
+backwards compatible way.
