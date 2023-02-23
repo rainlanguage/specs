@@ -38,16 +38,16 @@ Meta is a self describing document in three ways:
   `Content-Encoding`, and optionally `Content-Length`.
   https://www.rfc-editor.org/rfc/rfc8742.html
   https://developer.mozilla.org/en-US/docs/Glossary/Representation_header
-- The cbor-seq items also specify a magic number to act as a domain separator
-  that can be read by tooling in O(1) as a signal of intent for the payload
-  _without_ needing to first parse (and possibly decompress) the entire payload
+- The cbor-seq items also specify a magic number that can be read by tooling in
+  O(1) as a signal of intent for the payload _without_ needing to first parse
+  (and possibly decompress) the entire payload
 
 ### Magic numbers
 
-Magic numbers a.k.a. domain separators facilitate portability allowing tooling
-to identify with high confidence that some data is intended to be interpreted in
-some way regardless of where it may be found in the wild and what anyone else on
-the planet might be doing with their data.
+Magic numbers facilitate portability allowing tooling to identify with high
+confidence that some data is intended to be interpreted in some way regardless of
+where it may be found in the wild and what anyone else on the planet might be
+doing with their data.
 
 Spiritually similar to UUIDs and cryptographic hashes the basic intuition is
 that if some value is sufficiently unpredictable in the face of someone
@@ -128,12 +128,12 @@ The degree to which any magic number or other convention in this document is
 - If there's a deliberate or accidental collision then tooling will tend to break
   in subtle ways. Devs _hate_ it when their code breaks in subtle ways, so tool
   maintainers will probably outright reject one or both encodings by _social_
-  consensus (e.g. they will simply talk to each other and figure it out, or drop
-  anything they don't personally want to support)
+  consensus (e.g. they will talk to each other and figure it out, or they will
+  simply drop anything they don't personally want to support)
 
 CBOR and IANA already maintain enough centralised structures for lightweight and
 flexible encoders and decoders to be written (and have already been written in
-every major language). We should focus on curation of all 8 byte numbers at the
+every major language). We should focus on curation of 8-byte magic numbers at the
 social layer to allow actual applications to be written on a globally shared data
 repository (the blockchain).
 
@@ -166,8 +166,8 @@ comparable or even _larger_ size if compressed.
 - There is a high likelihood that the binary payload of each metadata item itself
   is already compressed data. Compressing compressed data usually either has no
   benefit or _increases_ the size of each payload. If the encoder of the payload
-  felt that compression would help they SHOULD apply the compression directly and
-  specify the compression algorithm in the encoding header (see below).
+  feels that compression would help they SHOULD apply the compression directly
+  and specify the compression algorithm in the encoding header (see below).
 - Through the use of domain specific aliasing of common keys and values
   (see below), much of the potential benefits of a general purpose compression
   algorithm are already realised by convention and so compression is likely to
@@ -218,13 +218,15 @@ strings and integer keys onchain for redundant information.
 | Index | Body                            |
 | ---   | ---                             |
 | 0     | Payload as CBOR binary data     |
-| 1     | Magic number / Domain Separator |
-| 2     | Alias for `Content-Encoding`    |
-| 3     | Alias for `Content-Type`        |
+| 1     | Magic number                    |
+| 2     | Alias for `Content-Type`        |
+| 3     | Alias for `Content-Encoding`    |
 | 4     | Alias for `Content-Language`    |
 
-Indexes 0-3 inclusive are MANDATORY and any CBOR item that omits these keys MUST
-be treated as unexpected (cbor terminology) and dropped/ignored.
+Indexes 0-2 inclusive are MANDATORY and any CBOR item that omits these keys MUST
+be treated as unexpected (cbor terminology) and dropped/ignored. Encoding and
+language are optional. No encoding means the payload is to be read literally as
+per `Content-Type`.
 
 This structure as presented could have been more concisely represented as a
 sequence rather than a key/value map but this would have several disadvantages
@@ -239,3 +241,87 @@ sequence rather than a key/value map but this would have several disadvantages
 In summary the map structure is chosen to facilitate future modifications to the
 conventions in this document in a way that tooling can adopt (or not) in a
 backwards compatible way.
+
+The main disadvantage of the map structure is some additional complexity in
+decoders to parse out the magic numbers that they support, relative to a
+hypothetical algorithm that would always read from the same sequence offset.
+However, any generic CBOR decoder can trivially read the map keys as outlined
+above, the only scenario this might come up would be some kind of custom onchain
+decoding and handling.
+
+### Example
+
+- Consider some JSON ABIv2 document produced by solc then deflated
+- A contract meta that references parts of the ABI and provides additional data
+  that a GUI can use to better describe the contract operation to a human, this
+  meta is encoded with cbor but provided as-is uncompressed
+
+The broad structure of the meta document would be
+
+```
+0xff0a89c674ee7874<ABI cbor item><contract cbor item>
+```
+
+Where the ordering of the cbor items is arbitrary, this spec doesn't have an
+opinion on ordering, which means outputs are NON DETERMINISTIC.
+
+As per CBOR spec, if the encoder wants to produce deterministic outputs it is
+up to the encoder to specify how it will achieve that.
+
+Assuming the deflated JSON ABIv2 data is `0x12345678` the CBOR data would be
+
+```
+{
+  0: 0x12345678,
+  1: 0xffe5ffb4a3ff2cde,
+  2: "application/json",
+  3: "deflate"
+}
+```
+
+Which encodes to 40 bytes excluding the payload bytes (from https://cbor.me).
+
+```
+A4                                     # map(4)
+   00                                  # unsigned(0)
+   1A 12345678                         # unsigned(305419896)
+   01                                  # unsigned(1)
+   1B FFE5FFB4A3FF2CDE                 # unsigned(18439425400648969438)
+   02                                  # unsigned(2)
+   70                                  # text(16)
+      6170706C69636174696F6E2F6A736F6E # "application/json"
+   03                                  # unsigned(3)
+   67                                  # text(7)
+      6465666C617465                   # "deflate"
+```
+
+Assuming contract meta data of `0x11223344` the CBOR data would be
+
+```
+{
+  0: 0x11223344,
+  1: 0xffc21bbf86cc199b,
+  2: "application/cbor"
+}
+```
+
+Which encodes to 31 bytes excluding the payload bytes
+
+```
+A3                                     # map(3)
+   00                                  # unsigned(0)
+   1A 11223344                         # unsigned(287454020)
+   01                                  # unsigned(1)
+   1B FFC21BBF86CC199B                 # unsigned(18429323134567717275)
+   02                                  # unsigned(2)
+   70                                  # text(16)
+      6170706C69636174696F6E2F63626F72 # "application/cbor"
+```
+
+So the final document is
+
+```
+0xff0a89c674ee7874a4001a12345678011bffe5ffb4a3ff2cde02706170706c69636174696f6e2f6a736f6e03676465666c617465a3001a11223344011bffc21bbf86cc199b02706170706c69636174696f6e2f63626f72
+```
+
+Which is 79 bytes total excluding both payloads.
