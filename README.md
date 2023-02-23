@@ -30,7 +30,7 @@ event etc.
 
 ## Self describing
 
-Meta is a self describing document in two ways:
+Meta is a self describing document in three ways:
 
 - The first 8 bytes MUST be the rain meta magic number
 - The list of metas is represented as an RFC8742 cbor-seq of maps where each
@@ -38,6 +38,9 @@ Meta is a self describing document in two ways:
   `Content-Encoding`, and optionally `Content-Length`.
   https://www.rfc-editor.org/rfc/rfc8742.html
   https://developer.mozilla.org/en-US/docs/Glossary/Representation_header
+- The cbor-seq items also specify a magic number to act as a domain separator
+  that can be read by tooling in O(1) as a signal of intent for the payload
+  _without_ needing to first parse (and possibly decompress) the entire payload
 
 ### Magic number
 
@@ -66,7 +69,30 @@ this property allows CBOR data to be directly concatentated within a binary
 file, unlike e.g. JSON that is ambiguous and so requires additional
 separators and processing logic to handle sequences correctly.
 
-Typical usage
+Typical usage will result in binary data that has a high probability of being
+comparable or even _larger_ size if compressed.
+
+- There is a high likelihood that the binary payload of each metadata item itself
+  is already compressed data. Compressing compressed data usually either has no
+  benefit or _increases_ the size of each payload. If the encoder of the payload
+  felt that compression would help they SHOULD apply the compression directly and
+  specify the compression algorithm in the encoding header (see below).
+- Through the use of domain specific aliasing of common keys and values
+  (see below), much of the potential benefits of a general purpose compression
+  algorithm are already realised by convention and so compression is likely to
+  _increase_ the overall size of the CBOR sequence.
+
+An additional consideration is that decompression algorithms may be too complex
+and/or memory intensive to be supported onchain. If we were to put the CBOR
+sequence behind compression it would make it impossible for smart contracts to
+inspect user-provided data and sanity check that compatible/complete metadata has
+been provided. CBOR was explicitly designed for low code complexity and resource
+consumption in decoding so we should preserve/forward this design goal downstream
+to consumers of our metadata.
+
+For these reasons the CBOR sequence itself MUST NOT be compressed although
+individual binary payloads SHOULD be compressed if it allows significant gas
+cost efficiencies.
 
 ### HTTP representation headers
 
@@ -79,11 +105,30 @@ onchain or from some other p2p system such as IPFS where the practicalities
 of the system typically handle data integrity and availability concerns.
 E.g. There is no danger that a CBOR seq will be truncated accidentally due to
 some network failure as the block or IPFS hash itself provides cryptographic
-proof of the data integrity.
+proof of the data integrity. Similarly `Content-Length` is NOT supported as the
+CBOR sequence itself unambiguously specifies its own member items and the lengths
+of each payload.
 
-As the HTTP header names are each quite long, weighing 12-16 bytes each, we
-use single byte utf-8 aliases to each
+#### Header name aliases (CBOR map keys)
 
-Meta binary data is self describing using the same strings as HTTP headers
-`Content-Encoding` and `Content-Type` to describe meta content. These strings
-are governed by internet RFC standards and the IANA registry. They are
+As the HTTP header names are each quite long (12-16 bytes each) and we DO NOT
+compress the CBOR sequence data (see above), we instead alias each supported
+header to a single byte integer (range 0-255). Actually, for very small integers
+CBOR encodes both the size and value of the integer into a single byte, so the
+we can save a full ~30 bytes per CBOR item just by aliasing the keys.
+
+The following table describes the canonical index/alias integers that tooling
+MUST implement. I.e. the HTTP string representations of the keys such as
+`'Content-Encoding'` are NOT supported as this would allow encoders to produce
+data that decoders are explicitly trying to avoid the complexity of reading.
+E.g. consider the runtime and code size deployment gas costs of supporting BOTH
+strings and integer keys onchain for redundant information.
+
+| Index | Body                            |
+| ---   | ---                             |
+| 0     | Payload as CBOR binary data     |
+| 1     | Magic number / Domain Separator |
+| 2     | Alias for `Content-Encoding`    |
+| 3     | Alias for `Content-Type`        |
+| 4     | Alias for `Content-Language`    |
+
