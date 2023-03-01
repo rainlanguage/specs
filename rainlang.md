@@ -147,7 +147,7 @@ wasm to the browser and blockchain simultaneously, etc.
 In this way Rainlang can be thought of as a "hosted language" as popularised by
 Clojure, with major concurrent implementations in java, javascript and .NET.
 
-## Stack first
+## Stack first language
 
 Rainlang is not only a stack language but its raison d'etre is to build a stack
 as its final output.
@@ -191,6 +191,22 @@ incrementally build up the final stack.
 Each line is explicitly ended by `,`. It is an error to omit the trailing `,` for
 each line.
 
+> 🤔 Unlearning 🤔
+>
+> Commas DO NOT delimit list items or inputs to words or anything else in
+> Rainlang. If you are coming from a more functional language like a lisp or
+> nix (or even bash) this may be natural. If you're working with Javascript
+> or similar a lot you may need to unlearn the habit of sprinkling commas through
+> your code.
+>
+> Every character of syntax in Rainlang has ONE unambiguous meaning, which
+> simplifies learning and implementing Rainlang.
+>
+> Commas as separators do NOT help computers understand code, they may even be
+> nothing more than a mistake waiting to happen, as is often the case with
+> trailing commas in otherwise valid JSON documents.
+
+
 The end of a stack is denoted by a `;` _instead of_ a `,`.
 
 A single expression MAY consist of many stacks and each stack usually consists of
@@ -206,6 +222,26 @@ The default case is unnamed stack items which are denoted by `_`.
 Words on the RHS _reference_ some compiled solidity code in the interpreter. The
 metadata about the compiled code informs Rainlang how each word reads and writes
 to the stack, and other behaviours.
+
+As words are references to real compiled Solidity functions they follow a similar
+syntax to function invocations in other languages. The syntax is the name of the
+word as prefix then parens `()` with optional inputs (explained more below).
+
+Any symbol on the RHS that is not followed by parens is considered a literal and
+DOES NOT directly reference a Solidity function. How literals are handled is
+explained below.
+
+Infix notation (or any other -ix) is NOT supported. There are no "operators" such
+as `+` or `-` hardcoded into Rainlang. Even "basic" arithmatic is up to the
+interpreter to define and provide. There are several reasons for this:
+
+- There is no One True Addition (let alone any other operator), consider
+  overflow, saturation, Solidity compiler optimisations, Open Zepplin SafeMath,
+  etc. just to name a few variants of integer addition
+- Each -fix notation that a language parser needs to support increases code
+  complexity and therefore reduces the surface area that Rainlang can cover as a
+  hosted language
+- We don't want to require that ANY specific word exists
 
 For example, a simple expression that creates a stack of 2 items, with the
 current block number and timestamp could look like either of the following.
@@ -267,3 +303,14 @@ _:;
 ```rain
 _ _:;
 ```
+
+An empty stack is also valid, denoted simply as `:;`.
+
+Rainlang MUST output `0` bytes for an empty stack, so that onchain contracts can cheaply and reliably skip evaluation of empty stacks entirely.
+
+### Comments
+
+`/* */` is the comment syntax used in Rainlang and popular in many other langs.
+
+This is the most explicit commonly used syntax across all languages, it doesn't
+require end of line detection to implement so reduces the
