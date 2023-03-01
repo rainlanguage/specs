@@ -134,3 +134,41 @@ key classes of vulnerability by construction.
   expression need to know who they are dealing with and what control each other
   party has over the operation of the system. Obvious scams such as admin mint
   functions should be obvious to anyone who knows Rainlang.
+
+### Portability
+
+Currently Rainlang is implemented in Javascript and the underlying smart
+contracts are implemented in Solidity for the EVM.
+
+Ultimately these are mere implementation details. It should be possible to
+implement both Rainlang and the interpreter in Rust (for example) and deploy via.
+wasm to the browser and blockchain simultaneously, etc.
+
+In this way Rainlang can be thought of as a "hosted language" as popularised by
+Clojure, with major concurrent implementations in java, javascript and .NET.
+
+## Stack first
+
+Rainlang is not only a stack language but its raison d'etre is to build a stack
+as its final output.
+
+The most obvious implementation (if you're familiar with stacks) is a single
+Solidity `uint256[]` array.
+
+The final stack output is returned to the caller of `eval` and the usage of the
+stack is entirely up to the caller. Examples include popping the final two values
+as amount/price on an order book, scanning the list until a sentinel is found to
+build a sub-array, taking a single value to act as a bool to gate access, etc.
+
+Rainlang itself doesn't know anything about what the final stack does or is for,
+it merely focusses on building the stack.
+
+Conceptually each Rainlang stack can be divided into 3 zones. Any of the zones
+can have 0+ values (i.e. may be empty).
+
+`[ input/initial values ] [ internal values] [ output/used values ]`
+
+Rainlang doesn't know which values are which, but the author does (should).
+
+### LHS then RHS
+
