@@ -147,7 +147,7 @@ wasm to the browser and blockchain simultaneously, etc.
 In this way Rainlang can be thought of as a "hosted language" as popularised by
 Clojure, with major concurrent implementations in java, javascript and .NET.
 
-## Stack first language
+### Stack first language
 
 Rainlang is not only a stack language but its raison d'etre is to build a stack
 as its final output.
@@ -183,7 +183,40 @@ There are no initial values on the initial stack when called by an external
 contract. Initial values MAY be created by words that recursively evaluate logic
 and handle substacks to emulate something like function calls.
 
-### Basic syntax
+## Trust, data and extensibility model
+
+@TODO
+
+- Stack
+    - Deterministic size/OOB
+    - Highwater/immutability
+    - Runtime values
+- Constants
+    - Expression time values
+- Context
+    - Contextual values
+        - Contract
+        - `msg.sender`
+        - Third party signed
+- Extern
+- Call/scope
+- Loop
+
+## Bytecode syntax
+
+The bytecode syntax is everything that is mechanically reversible from literal
+bytecode onchain _without additional metadata_.
+
+For example, if some bytes onchain represents "get token balance" then we can
+format the bytes as "get token balance" in Rainlang directly and represent it
+exactly with the bytecode syntax.
+
+An example of this from another language is [`.wat` files for wasm](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format),
+the lisp syntax and the assembly bytecode can be parsed and formatted 1:1
+bidirectionally by a machine, depending on the desired representation at any
+moment.
+
+### Stack representation
 
 Rainlang expressions are a sequence of statements (like most languages) that
 incrementally build up the final stack.
@@ -206,7 +239,6 @@ each line.
 > nothing more than a mistake waiting to happen, as is often the case with
 > trailing commas in otherwise valid JSON documents.
 
-
 The end of a stack is denoted by a `;` _instead of_ a `,`.
 
 A single expression MAY consist of many stacks and each stack usually consists of
@@ -218,6 +250,24 @@ of the `:` is a stack item and everything on the right hand side (RHS) is logic
 that will run to create the items on the left.
 
 The default case is unnamed stack items which are denoted by `_`.
+
+> 🤔 Unlearning 🤔
+>
+> The end of a line in Rainlang is denoted by a comma `,` rather than newline
+> whitespace characters. This allows for compact "one liners" where a single line
+> of text is interpreted as several lines of Rainlang code. For CLI interfaces,
+> tweets, and other space constrained environments, this may be important to
+> concisely represent a stack/concept without awkward escape characters etc.
+>
+> EOL whitespace characters can also change based on operating system and
+> environment configuration. Removing potentially ambiguous syntactically
+> significant whitespace from the definition of "a statement" or even "a line"
+> allows for simpler implementations and more compact expressions.
+>
+> To state it another way, the EOL character of the medium the Rainlang
+> expression is written in (context dependent whitespace defined by environment)
+> is different to the EOL character that defines LHS/RHS pairings
+> (unambiguous character defined by Rainlang).
 
 Words on the RHS _reference_ some compiled solidity code in the interpreter. The
 metadata about the compiled code informs Rainlang how each word reads and writes
@@ -242,6 +292,8 @@ interpreter to define and provide. There are several reasons for this:
   complexity and therefore reduces the surface area that Rainlang can cover as a
   hosted language
 - We don't want to require that ANY specific word exists
+- Removing operators also removes the need to learn and memorize and chance to
+  forget and mistake operator precedence rules
 
 For example, a simple expression that creates a stack of 2 items, with the
 current block number and timestamp could look like either of the following.
@@ -308,9 +360,248 @@ An empty stack is also valid, denoted simply as `:;`.
 
 Rainlang MUST output `0` bytes for an empty stack, so that onchain contracts can cheaply and reliably skip evaluation of empty stacks entirely.
 
+### Named LHS values
+
+## Pragma
+
+### StrictYaml front matter
+
+@TODO
+
+### DISpairing
+
+@TODO
+
+### License
+
+@TODO
+
+## Expression metadata
+
+Anything that is NOT 1:1 with information that can be directly read from the
+expression bytecode is considered metadata.
+
+The definition of metadata is the complement to the definition of bytecode syntax
+as explained above. While bytecode syntax allows a machine to move 1:1 between
+bytecode and the Rainlang formatted equivalent, expression metadata is discarded
+and not present in the bytecode. Metadata by its nature and by design is only
+available as an overlay _alongside_ the bytecode syntax, a "nice to have" but
+never strictly necessary to read or run Rainlang code.
+
+The metadata spec is in the same respository as this spec. It is permissionlessly
+extensible so any description of metadata in this spec for an expression should
+be understood as only a minimum or guideline for how metadata _could_ work.
+
+Metadata can include things like:
+
+- Code comments
+- Descriptive naming of LHS items
+- Aliasing to make sense of or reduce boilerplate
+
+Which are all great and important sensemaking tools but are all a double edged
+sword.
+
+ALL METADATA CAN LIE.
+
+It is important to understand that metadata is a _claim_ made by a specific party
+(not necessarily the expression author) that assigns a _concept_ to hard logic.
+There are several ways this can go wrong
+
+- Author misunderstands the code and mistakenly assigns the wrong concept (bug)
+- Author wants reader to misunderstand the code and intentionally assigns wrong
+  concept (attack)
+- Author assigns valid concept but reader misunderstands (user error)
+
+The first two we obviously want to avoid entirely. The last point is subtle. The
+question in this case is whether the damage would have been more or less had the
+metadata been completely omitted. Logically we can say that a larger number of
+factual statements is more information is better, but is that how human brains
+operate?
+
+Walls of text DO NOT help improve smart contract security nor encourage usage.
+
+Subjective concepts and explanations WILL BE manipulated by attackers to trick
+victims.
+
+> 🤔 Unlearning 🤔
+>
+> Metadata authors SHOULD NOT include information that
+> - substantially duplicates the information available directly onchain from meta
+>   that is hashed into contract bytecode directly, in this case the contract is
+>   the best source of truth, not an individual author
+> - explain how Rainlang or underlying smart contracts themselves work unless
+>   there is real expectation of unexpected behaviour
+>   (e.g. there's a bug and you're documenting a workaround)
+> - Paraphrase or transliterate literal RHS logic as it is written verbatim
+> - Anything else with very low signal to noise ratio
+>
+> The last point is important. Consider the COST OF LIES and the ATTENTION SPAN
+> OF YOUR READER as well as the benefits of true statements. If your data adds
+> little benefit if true, but potentially creates catastrophic misunderstanding
+> if false or misread or distracting, is it worth the risk?
+>
+> Good metadata helps the reader analyse whether code achieves/implements the
+> stated/implied goals so INTENT IS SIGNAL, transliteration and repetition is
+> noise.
+
+### Decoupled multi-social-metadata
+
+All metadata in Rainlang is explicitly decoupled from both the expression
+bytecode and expression author.
+
+By design there can be many authors of metadata for a single expression. Once can
+easily imagine a high stakes high value expression deployed by some author who
+provided buggy metadata for otherwise valid code. A professional auditing firm
+could flag the metadata and reissue corrected metadata under their own private
+key.
+
+As this all happens onchain according to the metadata spec, readers can use the
+indexer and filtering algorithm of their choice to display metadata they __trust__
+and discard everything else.
+
+This lifts the utility of metadata from the bytecode (where it is useless) to the
+social layer (where humans can share context p2p).
+
+The simplest filtering algorithm is "keep only metadata issued onchain by the
+author of the expression". This algorithm is functionally equivalent to
+verification of a smart contract on etherscan by the deployer, but onchain
+instead of tied to the etherscan system.
+
+Every possible more complex algorithm such as "keep author metadata and also
+auditors i trust and also everything i author" adds overlays on top of bytecode
+much like restaurant reviews on Google Maps. People SHOULD put at least as much
+effort into reading and writing smart contract reviews as they put into reading
+and writing pizza and movie reviews.
+
+> 🤔 Unlearning 🤔
+>
+> In web3 the author of an arbitrary smart contract is NOT your friend. Rainlang
+> expressions may have simple syntax compared to Solidity or EVM bytecode, but
+> they are still smart contracts.
+>
+> Unlike typical FOSS projects where the author can generally be assumed to be
+> at least attempting to act in your best interest, the opposite is true for
+> crypto. The vast, overwhelming majority of all smart contracts everywhere are
+> buggy and/or malicious, sometimes even unintentionally. Many a ponzi scheme has
+> launched and imploded on Ethereum seemingly by token designers who themselves
+> had no idea that their "economy" was little more than a rube goldberg ponzi
+> waiting for a bank run.
+>
+> All metadata associated with Rainlang expressions SHOULD be treated as highly
+> suspect by default. __The author of a scam doesn't want you to notice their
+> infinite mint function, or they want to convince you that it is harmless
+> (it isn't).__ Even a seemingly harmless naming of an LHS item could be pulling
+> a sleight-of-hand switcheroo in your brain, making you read a price as an
+> amount or a block number as a timestamp, etc. etc.
+>
+> Overly complex/nested expressions that seem to need a lot of metadata to
+> comprehend SHOULD be treated as suspicious.
+>
+> If the author of an expression hasn't done everything in their power to make
+> the _bytecode syntax_ form of an expression comprehensible, this is a red flag
+> already. Either they are a beginner and so watch out for bugs or they are an
+> attacker and so watch out for scams.
+>
+> The intended workflow for a _reader_ of Rainlang is that they add their own
+> metadata to raw formatted bytecode syntax, and then republish this onchain to
+> contribute back to the social layer that helps keep everyone safe.
+
 ### Comments
 
 `/* */` is the comment syntax used in Rainlang and popular in many other langs.
 
 This is the most explicit commonly used syntax across all languages, it doesn't
-require end of line detection to implement so reduces the
+require end of line detection to implement so reduces implementation complexity.
+
+✅
+```
+/* Stack the current block time */
+_: now(),
+/**
+ * Stack the current block number.
+ * Is also the last value on the stack.
+ */
+_: block-timestamp();
+```
+
+Common commenting syntax that relies on EOL whitespace to terminate is NOT
+supported, as `,` denotes the end of a line in Rainlang and this is a very common
+character to want to use in a comment.
+
+❌
+```
+// A "one line" comment like this would be awkward, it contains commas, so is it
+// valid or not? easier to simply NOT support this type of entirely unnecessary
+// thing at all.
+_: now();
+```
+
+Inline comments are also NOT supported. The naive implementation of comment
+metadata as assigned to a stack position on the LHS is also the correct
+implementation of all possible comment metadata.
+
+❌
+```
+_: erc20-balance(/* caller */ context<0 0>());
+```
+
+Note however that like all metadata COMMENTS CAN LIE. Usually comments are
+included in scope for a Solidity smart contract audit because they can very
+easily misrepresent the contract logic either accidentally or maliciously.
+Rainlang comments fall into the same category and produce the same dangers.
+
+❌
+```
+/* Stack the current block number. */
+_: now();
+```
+
+Bytecode however never lies. A well behaved interpreter includes the name and
+description of every word as _onchain metadata hashed into its bytecode_.
+
+Either state the purpose/intent of code (if not obvious from context/convention)
+or say nothing at all (if obvious from context/convention).
+
+✅
+```
+_: now();
+```
+
+✅
+```
+/**
+ * We need the current timestamp because the dinglehoppers assume that our token
+ * spingleringers are never stale.
+ */
+_: now();
+```
+
+❌
+```
+/* Stack the current block timestamp. */
+_: now();
+```
+
+## LHS name overrides
+
+@TODO
+
+## Aliases
+
+@TODO
+
+## Context interpretation
+
+@TODO
+
+## Opmeta
+
+@TODO
+
+## Contract meta
+
+@TODO
+
+## Constant meta
+
+@TODO
