@@ -168,7 +168,94 @@ can have 0+ values (i.e. may be empty).
 
 `[ input/initial values ] [ internal values] [ output/used values ]`
 
-Rainlang doesn't know which values are which, but the author does (should).
+Rainlang doesn't know which values are which, but the author does (should). The
+calling contract also specifies a minimum number of values (for example an order
+book needs at least two values), and if the final stack is less than the minimum
+this is a deploy time error that MUST revert the deployment.
 
-### LHS then RHS
+The calling contract also specifies a maximum number of values that it can
+handle usefully. This allows the interpreter to save gas on returning the entire
+stack. For example, there may be dozens of internal values leading up to a final
+single true/false, the interpreter should only return the singular final value if
+the caller specifies it has no use for excess values.
 
+There are no initial values on the initial stack when called by an external
+contract. Initial values MAY be created by words that recursively evaluate logic
+and handle substacks to emulate something like function calls.
+
+### Basic syntax
+
+Rainlang expressions are a sequence of statements (like most languages) that
+incrementally build up the final stack.
+
+Each line is explicitly ended by `,`. It is an error to omit the trailing `,` for
+each line.
+
+The end of a stack is denoted by a `;` _instead of_ a `,`.
+
+A single expression MAY consist of many stacks and each stack usually consists of
+multiple lines/statements.
+
+Unlike most languages, the structure of the language mirrors the structure of
+the stack and is explicitly denoted by `:`. Everything on the left hand side (LHS)
+of the `:` is a stack item and everything on the right hand side (RHS) is logic
+that will run to create the items on the left.
+
+The default case is unnamed stack items which are denoted by `_`.
+
+Words on the RHS _reference_ some compiled solidity code in the interpreter. The
+metadata about the compiled code informs Rainlang how each word reads and writes
+to the stack, and other behaviours.
+
+For example, a simple expression that creates a stack of 2 items, with the
+current block number and timestamp could look like either of the following.
+
+```rain
+_: now(),
+_: block-number();
+```✅
+
+```rain
+_ _: now() block-number();
+```✅
+
+However it is NOT valid to have unbalanced excess items on the RHS. For example
+the following is NOT valid even though the overall outputs and stack items are
+balanced, the individual lines are not.
+
+```rain
+_:,
+_: now() block-number();
+```❌
+
+The reason for this is simply that it makes visual inspection more difficult.
+
+The following IS valid if the stack is expected to be prepopulated with some
+inputs. The first value on the LHS has no associated RHS because the memory
+will be written by the caller of the expression rather than the expression
+itself.
+
+```rain
+_:,
+_: now();
+```✅
+
+Prepopulated inputs are ONLY valid in the (potential) inital value region of the
+stack, they cannot follow an RHS side item. The following is NOT valid.
+
+```rain
+_: now(),
+_:;
+```❌
+
+An identity stack simply sets aside the structure for inputs and has no RHS
+items. A 2-item identity stack is valid as either of the following.
+
+```rain
+_:,
+_:;
+```✅
+
+```rain
+_ _:;
+```✅
