@@ -210,23 +210,27 @@ to the stack, and other behaviours.
 For example, a simple expression that creates a stack of 2 items, with the
 current block number and timestamp could look like either of the following.
 
-```rain
+
+✅
+```
 _: now(),
 _: block-number();
-```✅
+```
 
-```rain
+✅
+```
 _ _: now() block-number();
-```✅
+```
 
 However it is NOT valid to have unbalanced excess items on the RHS. For example
 the following is NOT valid even though the overall outputs and stack items are
 balanced, the individual lines are not.
 
-```rain
+❌
+```
 _:,
 _: now() block-number();
-```❌
+```
 
 The reason for this is simply that it makes visual inspection more difficult.
 
@@ -235,27 +239,31 @@ inputs. The first value on the LHS has no associated RHS because the memory
 will be written by the caller of the expression rather than the expression
 itself.
 
-```rain
+✅
+```
 _:,
 _: now();
-```✅
+```
 
 Prepopulated inputs are ONLY valid in the (potential) inital value region of the
 stack, they cannot follow an RHS side item. The following is NOT valid.
 
+❌
 ```rain
 _: now(),
 _:;
-```❌
+```
 
 An identity stack simply sets aside the structure for inputs and has no RHS
 items. A 2-item identity stack is valid as either of the following.
 
+✅
 ```rain
 _:,
 _:;
-```✅
+```
 
+✅
 ```rain
 _ _:;
-```✅
+```
