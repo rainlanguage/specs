@@ -442,6 +442,9 @@ the same rule from Rainlang that shadowing is disallowed.
 Every name binding MUST be unique and collisions MUST be handled by either
 renaming in situ or rebinding upon import.
 
+Shadowing is also NOT allowed with names on the LHS in a Rainlang fragment.
+All names MUST be unique.
+
 #### Name bindings are unordered
 
 As collisions, shadowing and unbound names are all disallowed the names within
