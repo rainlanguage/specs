@@ -639,7 +639,7 @@ add(math.pi math.pi)
 #### Rebinding names
 
 Imports allow explicit
-[dynamic (re)binding](emacswiki.org/emacs/DynamicBindingVsLexicalBinding) of
+[dynamic (re)binding](https://emacswiki.org/emacs/DynamicBindingVsLexicalBinding) of
 values upon import.
 
 Consider the following .rain files.
