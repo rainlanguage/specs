@@ -533,11 +533,12 @@ Namespaces are just branches on a tree of names.
 We use `.` to delimit names as it often brings a kind of "path", "drilling down"
 or "chaining" feeling in the wild.
 
-There is no concern that `.` will be mistaken for part of a Rainlang fragment as
-it ONLY means "namespace" in the context of a `#` prefixed name, and there are
-no fragments where `#` is a valid character. If some future iteration of Rainlang
-includes `#` as a valid character then we may need to revisit concerns around `.`
-and potentially being misinterpreted e.g. as a decimal number etc.
+There is no concern that `.` will be mistaken for an unrelated part of a
+Rainlang fragment as it ONLY means "namespace" in the context of a `#` prefixed
+name or word, and there are no fragments where `#` is a valid character. If some
+future iteration of Rainlang includes `#` as a valid character then we may need
+to revisit concerns around `.` and potentially being misinterpreted e.g. as a
+decimal number etc.
 
 Namespacing applies equally to words as words are valid fragments, even though
 they are leaves of the AST. This is especially important for extern contracts
