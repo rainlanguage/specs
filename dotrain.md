@@ -211,6 +211,27 @@ As a regex this is `[\s -~]`.
 utf8 is backwards compatible with ascii so the codepoints are the same in either
 encoding.
 
+## Additional characters
+
+Beyond the basic Rainlang fragment syntax, .rain documents introduce several new
+characters/syntax described below:
+
+- `#` binds a name to a fragment
+- `!` is a fragment error
+- `.` delimits paths in a namespace
+- `'` quotes names
+- `@` imports .rain/metadata
+
+At the time of writing none of these characters are in use in Rainlang proper but
+even if they were their usage is unlikely to cause ambiguity with .rain and
+Rainlang fragments.
+
+- `#` and `@` only appear at the root of a .rain document
+- `!` only appears immediately following `#`
+- `.` and `'` MAY be found within Rainlang fragments but are unambiguous
+  extensions of names/words in Rainlang provided they are not included within
+  names/words with some conflicting meaning in a future version of Rainlang
+
 ## Self describing
 
 @TODO
@@ -278,8 +299,8 @@ include either of these within a Rainlang fragment.
 
 Named fragments take the form of `#<name><whitespace><fragment>`.
 
-We can say the fragment is _bound_ to the name in the _lexical scope_ of the
-current .rain document, which acts as as anonymous top level _namespace_.
+We can say the fragment is _lexically bound_ to the name in the  current .rain
+document, which acts as as anonymous top level _namespace_.
 
 Namespaces aren't named until they are imported with a name (discussed below).
 
@@ -333,7 +354,8 @@ including transitive circular references.
 #c a
 ```
 
-Unbound names are NOT allowed.
+Unbound names are NOT allowed on the RHS although are allowed on the LHS as per
+standard Rainlang rules about input values on the stack for sub-calls.
 
 Template/macro-like logic can be achieved by first binding all the names within
 a namespace then _explicitly rebinding_ names as desired upon import (see below).
@@ -395,7 +417,7 @@ error fragment MUST be `!`.
 #a foo(!)
 ```
 
-### Shadowing is disallowed
+#### Shadowing is disallowed
 
 Shadowing is NOT allowed.
 
@@ -404,13 +426,13 @@ Shadowing is NOT allowed.
 #a 2
 ```
 
-Although our name bindings are lexically scoped within a .rain document we adopt
+Although our name bindings are lexically bound within a .rain document we adopt
 the same rule from Rainlang that shadowing is disallowed.
 
 Every name binding MUST be unique and collisions MUST be handled by either
 renaming in situ or rebinding upon import.
 
-### Name bindings are unordered
+#### Name bindings are unordered
 
 As collisions, shadowing and unbound names are all disallowed the names within
 a .rain file behave like a simple unordered key/value store. Namespaces can be
@@ -423,6 +445,41 @@ implement sorted or unsorted bindings internally.
 #b a
 #a 1
 ```
+
+#### Using/quoting names directly
+
+The `'` character can be used to quote names.
+
+This is roughly adopted from clojure where `'` means "read without evaluating"
+which in a lisp means treating your code as data, to be used elsewhere in code.
+We're doing something much less featureful than that, but "quote" is fair enough
+to capture the concept of the name itself rather than the thing it names.
+
+This has two key uses:
+
+- Renaming (rather than rebinding) on import (see below)
+- Calculating the index of a call-like word in a fragment so that tooling can
+  construct indexes when building a Rainlang document from a .rain document
+
+Renaming is ONLY possible during import and so is described below.
+
+An example of a fairly standard `call` with operand args `call<index outputs>()`.
+
+```✅
+#add-five
+i:;
+_: add(i 5)
+
+#main
+/* outputs 10 */
+_: call<'add-five 1>(5)
+```
+
+From the example we can see that tooling will need to
+
+- Include any quoted fragments as sources that can be called
+- Substitute the quoted names found in fragments with the source index in the
+  final artifact
 
 #### Requires binding to expression to become a Rainlang document
 
@@ -495,8 +552,12 @@ Imports take the form of `@<namespace><whitespace><hash>` OR `@<hash>`.
 
 If the namespace is ommitted that means "import into the current namespace".
 
+`.` also means "current namespace" where it needs to, or benefits from, being
+made explicit, much like "current directory" in a file system.
+
 Importing is a recursive process and tooling MUST build the entire tree according
-to the imports but MAY reject .rain documents that consume too many resources
+to the imports but also MUST reject .rain documents that consume too many
+resources to build inn their entirety.
 e.g. due to a malicious structure that is very deep/broad to cheaply recurse.
 
 Import hashes reference _metadata_ so we can colloquially say
@@ -517,20 +578,19 @@ Op metadata
 - _describes_ how each word functions so that tooling can perform static analysis
   like balancing LHS and RHS with inputs and outputs, etc.
 
-#### Imports
+#### Imports respect namespaces with explicit rebinding
 
-Import statements should be thought of as "copy, paste". Exactly what is on the
-other side of the hash of an import statement is what will be injected into the
-current document exactly where the import statement appears.
+Import statements respect the local lexical binding of all namespaces that are
+imported (until/unless explicitly dynamically bound by the import).
 
-The caveat to this is that the namespace will be appended to all the names found
-in the imported document.
+Any namespace specified in an import will be prepended to all the names found in
+the imported document.
 
 For example, consider two .rain documents
 
 A.rain
 
-```
+```✅
 #pi
 /* pi is roughly 3 */
 3
@@ -538,7 +598,7 @@ A.rain
 
 B.rain
 
-```
+```✅
 @math 0xdeadbeef...
 #two-pies
 add(math.pi math.pi)
@@ -547,7 +607,7 @@ add(math.pi math.pi)
 Assuming that `0xdeadbeef...` is the hash of the metadata produced by compiling
 A then B expands to
 
-```
+```✅
 #math.pi
 /* pi is roughly 3 */
 3
@@ -555,37 +615,17 @@ A then B expands to
 add(math.pi math.pi)
 ```
 
-We could also consider a .rain file
+#### Rebinding names
 
-C.rain
-
-```
-@0xdeadbeef...
-#two-pies
-add(pi pi)
-```
-
-Which would expand to
-
-```
-#pi
-/* pi is roughly 3 */
-3
-#two-pies
-add(pi pi)
-```
-
-As A was imported into the root namespace of C.
-
-#### Mapping names
-
-We still need an answer for our earlier question about naming collisions.
+Imports allow explicit
+[dynamic (re)binding](emacswiki.org/emacs/DynamicBindingVsLexicalBinding) of
+values upon import.
 
 Consider the following .rain files.
 
 X.rain
 
-```
+```✅
 #pi
 3
 #two-pies
@@ -594,7 +634,7 @@ add(pi pi)
 
 Y.rain
 
-```
+```✅
 #pi
 4
 @x 0x..
@@ -608,29 +648,116 @@ This will expand to
 #x.pi
 3
 #x.two-pies
-add(pi pi)
-```
-
-❗ this is probably a surprising (undesirable) result ❗
-
-If you're a dev you are probably used to imports internally mapping all the
-symbols of the imported code to things in their local namespace. I.e. you would
-expect that the import is _rewritten_ upon import to look like
-
-```❌
-#pi
-4
-#x.pi
-3
-#x.two-pies
 add(x.pi x.pi)
 ```
 
-But no, if we literally copy and paste data into our imports then there's no such
-rewriting. In that way the imports work more like a macro or template, in that
-the imported document is NOT treated like an encapsulated code sandbox, it is
-treated as literally a library of _named fragments_ that are composed downstream
-and eventually bound to a specific expression.
+The author of the root namespace may want to use their version of `pi` within
+the `two-pies` fragment that they imported.
+
+To support this the import itself can dynamically rebind anything within the
+content of its import.
+
+The syntax for rebinding is a simple whitespace delimited list of key/value
+pairings where the key is the name being rebound and the value is the new binding
+within the current scope.
+
+The key is relative to the namespace specified after `@` and may optionally begin
+with a `.` character.
+
+Let's consider some alternate versions of Y that rebind `x.pi` to expand to `4`,
+or `pi` in the root namespace which is bound to `4`, rather than the original
+`3` value.
+
+```✅
+#pi
+4
+@x 0x..
+  pi 4
+```
+
+```✅
+#pi
+4
+@x 0x..
+  pi pi
+```
+
+```✅
+#pi
+4
+@x 0x..
+  .pi pi
+```
+
+#### Renaming names
+
+In some edge cases there may be an unavoidable naming collisions, such as when
+an imported word from an interpreter pollutes a previously clean namespace
+(described below).
+
+Names can be renamed by _rebinding a quoted name_.
+
+Continuing our example from above
+
+```✅
+#pi
+4
+@x 0x..
+  'pi phi
+```
+
+Expands to
+
+```✅
+#pi
+4
+#x.phi
+3
+#x.two-pies
+add(x.phi x.phi)
+```
+
+Note that both the name is renamed (of course) and also all the occurances of the
+name in fragments are renamed. As the goal is to maintain consistency while
+resolving unavoidable naming collisions, this is necessary to preserve
+original behaviours.
+
+#### Importing words
+
+Words are also importable and MUST be imported somewhere in the tree of imports
+that is specified upon building a Rainlang document from .rain files and Rainlang
+fragments.
+
+Words are a special case as they are the ultimate leaves of fragments and their
+definition is tightly coupled to the specific interpreter smart contract that
+will run the compiled bytecode from a Rainlang document.
+
+There are two places that words can be evaluated at runtime onchain:
+
+- Internally to the interpreter that runs `eval` over the expression bytecode
+- Externally to the interpreter on an "extern" contract dispatching a single word
+
+It follows that a Rainlang document can only include a _singleton_ of _internal_
+interpreter words, but MAY consist of arbitrarily many _externs_.
+
+As the internal interpreter words are a singleton they can be referenced globally
+in every namespace. E.g. `add` is just as valid as `a.add` and `b.add`.
+
+This has two key effects
+
+- Every namespace can write unprefixed words, which allows much more concise code
+- No namespace can accidentally shadow an interpreter word, forcing an explicit
+  _renaming_ anywhere there might be a collision
+
+Note that _words cannot be renamed_ so by definition any quoted rename
+(discussed above) will modify a name and NOT a word.
+
+_External_ words do NOT populate every namespace simultaneously, rather they
+follow the same namespacing conventions as names. Authors SHOULD import external
+word's metadata underneath a dedicated namespace to avoid all collisions and
+make it explicit and obvious where external words are used. If nothing else,
+external words are more gas intensive than internal words, and are worth calling
+out for the reader.
 
 #### Tooling compatibility
 
