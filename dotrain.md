@@ -314,7 +314,8 @@ Anonymous fragments are NOT SUPPORTED.
 
 An example consisting of two fragments, `slow-three` and `multiline-example`.
 
-```✅
+✅
+```
 #slow-three add(1 3)
 #multiline-example
 a _: slow-three 3
@@ -333,7 +334,8 @@ within a fragment.
 
 This is binding the name _in_ one fragment to the name _of_ another fragment.
 
-```✅
+✅
+```
 #a 1
 #b a
 ```
@@ -343,12 +345,14 @@ Both `a` and `b` expand to `1` when processed by tooling.
 Circular references are disallowed. Tooling SHOULD reject any circular bindings
 including transitive circular references.
 
-```❌
+❌
+```
 #a b
 #b a
 ```
 
-```❌
+❌
+```
 #a b
 #b c
 #c a
@@ -365,7 +369,8 @@ set sane defaults that can be optionally rebound, or bind to an error fragment
 (discussed below) so that the fragment cannot be built into a document without a
 mandatory rebind.
 
-```❌
+❌
+```
 #a b
 ```
 
@@ -389,7 +394,8 @@ without relying on an error-prone system such as implicitly unbound names
 This example will error if the tooling attempts to build a document from either
 `#a` or `#b`.
 
-```✅
+✅
+```
 #a !must bind a to calculate rate of change
 #b mul(sub(1000000 now()) a)
 ```
@@ -397,7 +403,8 @@ This example will error if the tooling attempts to build a document from either
 The error message can be multiline, it continues until the next # character that
 signifies a subsequent name/fragment binding.
 
-```✅
+✅
+```
 #a !
 `a` must be bound so that we can calculate a rate of change in seconds.
 Take care not to provide millis such as is commonly found in unix timestamps.
@@ -409,11 +416,13 @@ If `a` is `0` then nothing will happen as the rate of change is `0`.
 Error fragments MUST be the root of a fragment, i.e. the first character of an
 error fragment MUST be `!`.
 
-```❌
+❌
+```
 #a <!>
 ```
 
-```❌
+❌
+```
 #a foo(!)
 ```
 
@@ -421,7 +430,8 @@ error fragment MUST be `!`.
 
 Shadowing is NOT allowed.
 
-```❌
+❌
+```
 #a 1
 #a 2
 ```
@@ -441,7 +451,8 @@ modelled as a value that is itself a key/value store, recursively.
 Tooling MAY implement name bindings as a nested key/value store, and MAY
 implement sorted or unsorted bindings internally.
 
-```✅
+✅
+```
 #b a
 #a 1
 ```
@@ -465,7 +476,8 @@ Renaming is ONLY possible during import and so is described below.
 
 An example of a fairly standard `call` with operand args `call<index outputs>()`.
 
-```✅
+✅
+```
 #add-five
 i:;
 _: add(i 5)
@@ -536,12 +548,14 @@ language and data structure.
 > Namespaces are one honking great idea -- let's do more of those!
 > The Zen of Python
 
-```❌
+❌
+```
 #a 1
 #a 2
 ```
 
-```✅
+✅
+```
 #a 1
 #b.a 2
 ```
@@ -590,7 +604,8 @@ For example, consider two .rain documents
 
 A.rain
 
-```✅
+✅
+```
 #pi
 /* pi is roughly 3 */
 3
@@ -598,7 +613,8 @@ A.rain
 
 B.rain
 
-```✅
+✅
+```
 @math 0xdeadbeef...
 #two-pies
 add(math.pi math.pi)
@@ -607,7 +623,8 @@ add(math.pi math.pi)
 Assuming that `0xdeadbeef...` is the hash of the metadata produced by compiling
 A then B expands to
 
-```✅
+✅
+```
 #math.pi
 /* pi is roughly 3 */
 3
@@ -625,7 +642,8 @@ Consider the following .rain files.
 
 X.rain
 
-```✅
+✅
+```
 #pi
 3
 #two-pies
@@ -634,7 +652,8 @@ add(pi pi)
 
 Y.rain
 
-```✅
+✅
+```
 #pi
 4
 @x 0x..
@@ -642,7 +661,8 @@ Y.rain
 
 This will expand to
 
-```✅
+✅
+```
 #pi
 4
 #x.pi
@@ -668,21 +688,24 @@ Let's consider some alternate versions of Y that rebind `x.pi` to expand to `4`,
 or `pi` in the root namespace which is bound to `4`, rather than the original
 `3` value.
 
-```✅
+✅
+```
 #pi
 4
 @x 0x..
   pi 4
 ```
 
-```✅
+✅
+```
 #pi
 4
 @x 0x..
   pi pi
 ```
 
-```✅
+✅
+```
 #pi
 4
 @x 0x..
@@ -699,7 +722,8 @@ Names can be renamed by _rebinding a quoted name_.
 
 Continuing our example from above
 
-```✅
+✅
+```
 #pi
 4
 @x 0x..
@@ -708,7 +732,8 @@ Continuing our example from above
 
 Expands to
 
-```✅
+✅
+```
 #pi
 4
 #x.phi
