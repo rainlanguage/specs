@@ -16,6 +16,13 @@ trails. Without this it will be more difficult to build an explicit and
 incremental model of trust, where participants earn/lose trust through producing
 onchain artifacts that can be used to justify their good or bad reputation.
 
+Composition MUST natively support iterative development practises such as
+"this is exactly that with only these changes". While we don't want to reinvent
+git, there are some aspects of git such as hashed "commits" that reference an
+unambiguous _state_ which all existing audit trails and tooling relies upon. The
+.rain composition MUST ALSO be amenable to standard development practises such as
+git, the two systems should be complementary in nature.
+
 Much as the bytecode syntax of Rainlang is 1:1 with bytecode, a .rain file is
 1:1 with a cbor-seq of metadata as described by the metadata spec. That is to
 say, given a compatible cbor-seq of metadata it is possible to recover an
@@ -129,6 +136,46 @@ understand spreadsheets" than "the target audience is someone who _does_ know
 excel". The former is a statement about broad technical aptitude and the second
 is a statement about a specific skillset.
 
+#### No-tooling
+
+While Rainlang has a design goal to be simply and visually readable and
+writeable in entirety by a relatively (to assembly/Solidity) non technical user,
+.rain documents DO NOT have that goal.
+
+.rain files explicitly import/reference metadata for tooling such as information
+about how every word in an interpreter moves a stack at runtime. The default
+state for an empty .rain file already contains too much information for human
+comprehension the moment it binds to a DISpair.
+
+The goals of .rain documents are intented as stated _to allow tooling to exist_,
+whether a classic IDE, or some more specialised interface.
+
+Notably the details of how to produce and manage hashes of imports
+(discussed below) are never going to be produced by hand by a human.
+
+Similarly the composition of Rainlang fragments into a Rainlang document involves
+several steps that cannot be done mentally by a human:
+
+- Checking hashes
+- Name bindings and namespaces
+- Expansion of fragments into a document
+- Applying metadata such as opmeta to the final document to build a deployable
+  artifact
+
+Rainlang has the goal that bytecode syntax can be recovered to a legible document
+from the DISpair alone but this doesn't mean the original .rain document tree
+is recoverable directly from deployed binary.
+
+However, it SHOULD be trivial for an author (or anyone else) to provide:
+
+- Deployed expression
+- DISpair
+- A single hash
+
+And unambiguously find full metadata that can be recovered to a .rain document.
+
+Of course, tooling will be needed to perform that recovery.
+
 ## Encoding
 
 For humans to write code they need a medium in which to write the code in.
@@ -231,6 +278,11 @@ include either of these within a Rainlang fragment.
 
 Named fragments take the form of `#<name><whitespace><fragment>`.
 
+We can say the fragment is _bound_ to the name in the _lexical scope_ of the
+current .rain document, which acts as as anonymous top level _namespace_.
+
+Namespaces aren't named until they are imported with a name (discussed below).
+
 The top level of the .rain file is only named fragments.
 
 The choice of `#` is inspired by markdown's header syntax, EDN's tagging, Rust's
@@ -241,16 +293,138 @@ Anonymous fragments are NOT SUPPORTED.
 
 An example consisting of two fragments, `slow-three` and `multiline-example`.
 
-```
+```✅
 #slow-three add(1 3)
 #multiline-example
 a _: slow-three 3
 _: mul(a 5)
 ```
 
-Already we note a few important implications.
+#### Named fragments must be valid
 
-#### Requires binding to expression
+Tooling MUST reject any .rain documents that contain _any_ invalid fragments
+even if the invalid fragments are not ultimately bound to a Rainlang document.
+
+#### Bound and unbound names within fragments
+
+The previous example includes `slow-three` as both a fragment name and appearing
+within a fragment.
+
+This is binding the name _in_ one fragment to the name _of_ another fragment.
+
+```✅
+#a 1
+#b a
+```
+
+Both `a` and `b` expand to `1` when processed by tooling.
+
+Circular references are disallowed. Tooling SHOULD reject any circular bindings
+including transitive circular references.
+
+```❌
+#a b
+#b a
+```
+
+```❌
+#a b
+#b c
+#c a
+```
+
+Unbound names are NOT allowed.
+
+Template/macro-like logic can be achieved by first binding all the names within
+a namespace then _explicitly rebinding_ names as desired upon import (see below).
+
+Fragments in .rain files that are intended to be a base for reuse should either
+set sane defaults that can be optionally rebound, or bind to an error fragment
+(discussed below) so that the fragment cannot be built into a document without a
+mandatory rebind.
+
+```❌
+#a b
+```
+
+#### Error fragments
+
+Names can point to error fragments. This is possible in a .rain document but will
+error if still present in a Rainlang document before deployment.
+
+Error fragment syntax is `!<message>`. Tooling SHOULD provide a generic error
+message that includes the name bound to the error if `<message>` is an empty
+string.
+
+The only way to build a Rainlang document from a tree of fragments that include
+an error fragment is to rebind the error fragment out of the tree at the import
+level (described below).
+
+This allows for template/macro like fragments to specify mandatory rebindings
+without relying on an error-prone system such as implicitly unbound names
+(which could be unbound accidentally due to a mere typo).
+
+This example will error if the tooling attempts to build a document from either
+`#a` or `#b`.
+
+```✅
+#a !must bind a to calculate rate of change
+#b mul(sub(1000000 now()) a)
+```
+
+The error message can be multiline, it continues until the next # character that
+signifies a subsequent name/fragment binding.
+
+```✅
+#a !
+`a` must be bound so that we can calculate a rate of change in seconds.
+Take care not to provide millis such as is commonly found in unix timestamps.
+If `a` is `0` then nothing will happen as the rate of change is `0`.
+
+#b mul(sub(1000000 now()) a)
+```
+
+Error fragments MUST be the root of a fragment, i.e. the first character of an
+error fragment MUST be `!`.
+
+```❌
+#a <!>
+```
+
+```❌
+#a foo(!)
+```
+
+### Shadowing is disallowed
+
+Shadowing is NOT allowed.
+
+```❌
+#a 1
+#a 2
+```
+
+Although our name bindings are lexically scoped within a .rain document we adopt
+the same rule from Rainlang that shadowing is disallowed.
+
+Every name binding MUST be unique and collisions MUST be handled by either
+renaming in situ or rebinding upon import.
+
+### Name bindings are unordered
+
+As collisions, shadowing and unbound names are all disallowed the names within
+a .rain file behave like a simple unordered key/value store. Namespaces can be
+modelled as a value that is itself a key/value store, recursively.
+
+Tooling MAY implement name bindings as a nested key/value store, and MAY
+implement sorted or unsorted bindings internally.
+
+```✅
+#b a
+#a 1
+```
+
+#### Requires binding to expression to become a Rainlang document
 
 If a .rain file only consists of named expressions it has no natural/implied
 entrypoint.
@@ -280,35 +454,6 @@ states there is an entrypoint called "calculate-order" and so the tooling will
 look for a fragment named `#calculate-order` in the .rain file to bind to the
 indexed entrypoint in the final evaluable config to deploy onchain.
 
-### Namespaces are critical and shadowing is disallowed
-
-In our example `#multiline-example` includes a reference to an alias `slow-three`
-which (so far) it hasn't been specified how this should work.
-
-In a single .rain document it's easy to say that `slow-three` should be the one
-that appears as a sibling, but how does this work with composition?
-
-If our example is .rain A and some .rain B imports A into it, but B also has a
-name `slow-three` then it becomes ambiguous which instance of `slow-three` should
-be used from the perspective of B.
-
-This is discussed in more detail in the description of the import process below
-but immediately we can say
-
-- Some concept of namespacing will be required to disambiguate name collisions
-  during composition
-- Shadowing should be completely disallowed to avoid the kinds of problems seen
-  in [unhygienic macro systems](https://en.wikipedia.org/wiki/Hygienic_macro)
-
-Restated, we can say that there will be some system of namespacing such that
-ambiguities can be resolved by the namespacing, and so we disallow any unresolved
-ambiguity in the final artifact. I.e. shadowing is disallowed completely and we
-provide syntax to avoid shadows in the first place.
-
-Implied is that we are NOT attempting a comprehensive macro system such as is
-found in languages such as Lisp and Rust. The scope is restricted to composition
-of fragments into a document ONLY.
-
 ### Namespaces
 
 Namespaces are just branches on a tree of names.
@@ -328,14 +473,31 @@ where the implementation of a word MAY be on an onchain contract that is not the
 root interpreter, and so we MAY need to disambiguate between
 e.g. `add` and `my-extern.add`.
 
+Namespaces are the standard way to handle name collisions in basically every
+language and data structure.
+
+> Namespaces are one honking great idea -- let's do more of those!
+> The Zen of Python
+
+```❌
+#a 1
+#a 2
+```
+
+```✅
+#a 1
+#b.a 2
+```
+
 ### Imports
 
 Imports take the form of `@<namespace><whitespace><hash>` OR `@<hash>`.
 
 If the namespace is ommitted that means "import into the current namespace".
 
-Importing is a recursive process and tooling MUST implement a depth-first
-traversal of imports in the order they appear in a tree of imports.
+Importing is a recursive process and tooling MUST build the entire tree according
+to the imports but MAY reject .rain documents that consume too many resources
+e.g. due to a malicious structure that is very deep/broad to cheaply recurse.
 
 Import hashes reference _metadata_ so we can colloquially say
 "import a .rain file" but technically we mean "import the metadata the .rain file
@@ -355,7 +517,7 @@ Op metadata
 - _describes_ how each word functions so that tooling can perform static analysis
   like balancing LHS and RHS with inputs and outputs, etc.
 
-#### Imports are dumb
+#### Imports
 
 Import statements should be thought of as "copy, paste". Exactly what is on the
 other side of the hash of an import statement is what will be injected into the
@@ -456,6 +618,8 @@ symbols of the imported code to things in their local namespace. I.e. you would
 expect that the import is _rewritten_ upon import to look like
 
 ```❌
+#pi
+4
 #x.pi
 3
 #x.two-pies
