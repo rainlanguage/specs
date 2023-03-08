@@ -400,8 +400,8 @@ This example will error if the tooling attempts to build a document from either
 #b mul(sub(1000000 now()) a)
 ```
 
-The error message can be multiline, it continues until the next # character that
-signifies a subsequent name/fragment binding.
+The error message can be multiline, it continues until the next top level # or @
+character that signifies a subsequent name/fragment binding or import.
 
 ✅
 ```
