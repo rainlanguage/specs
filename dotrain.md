@@ -573,7 +573,7 @@ If the namespace is ommitted that means "import into the current namespace".
 `.` also means "current namespace" where it needs to, or benefits from, being
 made explicit, much like "current directory" in a file system.
 
-Importing is a recursive process and tooling MUST build the entire tree according
+Importing is a recursive process and tooling MUST build the tree according
 to the imports but also MUST reject .rain documents that consume too many
 resources to build inn their entirety.
 e.g. due to a malicious structure that is very deep/broad to cheaply recurse.
@@ -581,6 +581,18 @@ e.g. due to a malicious structure that is very deep/broad to cheaply recurse.
 Import hashes reference _metadata_ so we can colloquially say
 "import a .rain file" but technically we mean "import the metadata the .rain file
 maps to when compiled".
+
+The data is imported from the CAS (separate spec doc) and so tooling guarantees
+that all imports are in one of two possible states:
+
+- Found, local, valid, readable according to self describing properties,
+  supported by the tooling, cryptographic integrity checked according to the hash
+- Not found OR found and rejected
+
+If any imports in a tree are in the not found/rejected state, from the
+perspective of the .rain document the import itself is a fragment error. This
+implies that a dangling import MAY exist in a .rain document in a benign state
+until/unless it is resolved in a tree during a Rainlang document expansion.
 
 As importing references _metadata_ it can have two possible effects:
 
