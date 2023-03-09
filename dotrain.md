@@ -39,7 +39,8 @@ It follows from the above that some properties of .rain are desirable:
   authors (both bytecode authors and metadata authors).
 - Location independent imports, such that tooling knows the integrity of an
   import regardless of where the content was discovered, much as blocks in a
-  blockchain and data in IPFS are hashed so that they can be handled p2p.
+  blockchain and data in IPFS are hashed so that they can be handled p2p,
+  decoupled from client, storage and transmission details.
 - Native support for namespacing to support disambiguation of the remaining
   ambiguity that unavoidably arise in uncoordinated human-readable data
   (two different computer names with the same human name)
