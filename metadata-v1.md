@@ -215,18 +215,18 @@ data that decoders are explicitly trying to avoid the complexity of reading.
 E.g. consider the runtime and code size deployment gas costs of supporting BOTH
 strings and integer keys onchain for redundant information.
 
-| Index | Body                            |
-| ---   | ---                             |
-| 0     | Payload as CBOR binary data     |
-| 1     | Magic number                    |
-| 2     | Alias for `Content-Type`        |
-| 3     | Alias for `Content-Encoding`    |
-| 4     | Alias for `Content-Language`    |
+| Index | Body                         |
+| ---   | ---                          |
+| 0     | Payload as CBOR binary data  |
+| 1     | Magic number                 |
+| 2     | Alias for `Content-Type`     |
+| 3     | Alias for `Content-Encoding` |
+| 4     | Alias for `Content-Language` |
 
-Indexes 0-2 inclusive are MANDATORY and any CBOR item that omits these keys MUST
-be treated as unexpected (cbor terminology) and dropped/ignored. Encoding and
-language are optional. No encoding means the payload is to be read literally as
-per `Content-Type`.
+Indexes 0-1 inclusive are MANDATORY and any CBOR item that omits these keys MUST
+be treated as unexpected (cbor terminology) and dropped/ignored. Type, encoding
+and language are optional. No encoding means the payload is to be read literally
+as per `Content-Type`.
 
 This structure as presented could have been more concisely represented as a
 sequence rather than a key/value map but this would have several disadvantages
