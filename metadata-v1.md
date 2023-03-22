@@ -272,7 +272,7 @@ Assuming the deflated JSON ABIv2 data is `0x12345678` the CBOR data would be
 
 ```
 {
-  0: 0x12345678,
+  0: h'12345678',
   1: 0xffe5ffb4a3ff2cde,
   2: "application/json",
   3: "deflate"
@@ -284,7 +284,8 @@ Which encodes to 40 bytes excluding the payload bytes (from https://cbor.me).
 ```
 A4                                     # map(4)
    00                                  # unsigned(0)
-   1A 12345678                         # unsigned(305419896)
+   44                                  # bytes(4)
+      12345678                         # "\u00124Vx"
    01                                  # unsigned(1)
    1B FFE5FFB4A3FF2CDE                 # unsigned(18439425400648969438)
    02                                  # unsigned(2)
@@ -299,7 +300,7 @@ Assuming contract meta data of `0x11223344` the CBOR data would be
 
 ```
 {
-  0: 0x11223344,
+  0: h'11223344',
   1: 0xffc21bbf86cc199b,
   2: "application/cbor"
 }
@@ -310,7 +311,8 @@ Which encodes to 31 bytes excluding the payload bytes
 ```
 A3                                     # map(3)
    00                                  # unsigned(0)
-   1A 11223344                         # unsigned(287454020)
+   44                                  # bytes(4)
+      11223344                         # "\u0011\"3D"
    01                                  # unsigned(1)
    1B FFC21BBF86CC199B                 # unsigned(18429323134567717275)
    02                                  # unsigned(2)
