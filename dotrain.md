@@ -567,7 +567,7 @@ An example of a fairly standard `call` with operand args `call<index outputs>()`
 ✅
 ```
 #add-five
-i:;
+i:,
 _: add(i 5)
 
 #main
