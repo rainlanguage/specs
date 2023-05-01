@@ -100,7 +100,8 @@ assembly ("memory-safe") {
 }
 ```
 
-The former does a few unneccessary things that cost ~730 gas (about 3x total cost):
+The former does a few unneccessary things that cost ~730 gas
+(about 3x total cost, measured with the optimiser enabled, set to 100000 runs):
 
 - Zeros the high bits of the number `2` to convert it between types to use it as
   the length of an array
