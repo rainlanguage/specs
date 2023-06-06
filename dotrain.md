@@ -554,11 +554,17 @@ which in a lisp means treating your code as data, to be used elsewhere in code.
 We're doing something much less featureful than that, but "quote" is fair enough
 to capture the concept of the name itself rather than the thing it names.
 
-This has two key uses:
+As the quote references any binding name, it could reference a binding that has
+not elsewhere been included by value. In this case, the tooling will need to
+ensure the binding is included in the output so that the quote doesn't become a
+dangling reference.
+
+This has a few key uses:
 
 - Renaming (rather than rebinding) on import (see below)
 - Calculating the index of a call-like word in a fragment so that tooling can
   construct indexes when building a Rainlang document from a .rain document
+- Calculating the index of constants e.g. for use in operands
 
 Renaming is ONLY possible during import and so is described below.
 
