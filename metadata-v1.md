@@ -146,6 +146,7 @@ this document are already handling.
 | 0xffe5ffb4a3ff2cde | Solidity ABIv2                    |
 | 0xffe5282f43e495b4 | Ops meta v1                       |
 | 0xffc21bbf86cc199b | Contract meta v1                  |
+| 0xff0c949e41995247 | Optional meta v1                  |
 
 This document will be updated as new numbers become known but also feel free to
 build systems and applications with your own numbers and interpretations.
