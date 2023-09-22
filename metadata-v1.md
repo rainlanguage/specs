@@ -147,8 +147,8 @@ this document are already handling.
 | 0xffe5282f43e495b4 | Ops meta v1                       |
 | 0xffc21bbf86cc199b | Contract meta v1                  |
 | 0xffe9e3a02ca8e235 | Authoring meta v1                 |
-| 0xff1c198cec3b48a7 | Rainlang                          |
-| 0xffdac2f2f37be894 | Dotrain                           |
+| 0xff1c198cec3b48a7 | Rainlang v1                       |
+| 0xffdac2f2f37be894 | Dotrain v1                        |
 
 This document will be updated as new numbers become known but also feel free to
 build systems and applications with your own numbers and interpretations.
