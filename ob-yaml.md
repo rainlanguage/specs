@@ -181,7 +181,6 @@ Requires all the deployment components to be defined already somehow in the GUI 
 Required fields:
 - `inputs`
 - `outputs`
-- `network`
 
 Optional fields:
 - `deployer` (defaults to network deployer if unambiguous, otherwise required)
