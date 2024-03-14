@@ -177,6 +177,7 @@ Top level element `orders` in the front matter.
 Used to define a set of named orders that can be deployed onchain using `addOrder` on an orderbook contract.
 
 Requires all the deployment components to be defined already somehow in the GUI as per the above yamls.
+Network will be taken from inputs/outputs token's network, and they must match as well as `deployer` and `orderbook` if they are specified.
 
 Required fields:
 - `inputs`
@@ -189,7 +190,6 @@ Optional fields:
 ```
 orders:
   dca-eth:
-    network: mainnet
     inputs:
       - eth-weth
     outputs:
@@ -197,7 +197,6 @@ orders:
       - eth-dai
       - eth-usdt
   dca-eth-polygon:
-    network: polygon
     orderbook: polygon-experimental
     deployer: polygon-experimental
     inputs:
