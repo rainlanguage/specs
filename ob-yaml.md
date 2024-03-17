@@ -92,26 +92,6 @@ orderbooks:
     address: 0x...
 ```
 
-## Vaults
-
-From the perspective of yaml structure, vaults are much like subgraphs. There is a 1:many relationship with both orders that reference them for IO and tokens that might reference them for capital sandboxing. Each configured vault is simply a convenient name for (commonly) an opaque 32 byte hash. I.e. vaults don't have fields.
-
-The GUI SHOULD provide an easy way for users to generate randomised 32 byte values against memorable names, so that they can create many vaults easily, similar to how web2 services spin up randomised subdomains for development websites.
-
-```
-vaults:
-  # arbitrary
-  foo: 0x...
-  # date
-  2024-02-20: 0x...
-  # purpose
-  dca-input: 0x...
-  dca-output: 0x...
-  # generated
-  minute-dozen: 0x...
-  held-flavor: 0x...
-```
-
 ## Tokens
 
 At the minimum a token is a network, address and decimals. While ERC20 doesn't mandate decimals on the contract, it is required in practise to allow for standardized decimal 18 math, as non-18 decimal token values need to be scaled up/down to match. If a token has `0` decimals then this implies there are no fractional values and any amounts are to be treated as literal integers.
@@ -191,20 +171,28 @@ Optional fields:
 orders:
   dca-eth:
     inputs:
-      - eth-weth
+      - token: eth-weth
+        vault-id: 1
     outputs:
-      - eth-usdc
-      - eth-dai
-      - eth-usdt
+      - token: eth-usdc
+        vault-id: 1
+      - token: eth-dai
+        vault-id: 0x123
+      - token: eth-usdt
+        vault-id: 2
   dca-eth-polygon:
     orderbook: polygon-experimental
     deployer: polygon-experimental
     inputs:
-      - polygon-weth
+      - token: polygon-weth
+        vault-id: 1
     outputs:
-      - polygon-usdc
-      - polygon-dai
-      - polygon-usdt
+      - token: polygon-usdc
+        vault-id: 2
+      - token: polygon-dai
+        vault-id: 99
+      - token: polygon-usdt
+        vault-id: 0xabcd
 ```
 
 ### front matter scenarios
