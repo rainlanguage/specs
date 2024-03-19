@@ -146,6 +146,17 @@ deployers:
     network: polygon
 ```
 
+## Sentry Analytics
+
+The app will optionally collect analytics data to send to Sentry. This functionality is disabled by default and opt-in. If you are willing to share your analytics data it helps us to develop the and provide the best user experience. 
+
+Optional fields:
+- `sentry` (defaults to 'false')
+
+```
+sentry: true
+```
+
 ## Front matter yaml
 
 This yaml is NOT arbitrary across the GUI. It only makes sense when coupled to some specific rainlang, which also makes the most sense when provided as frontmatter that can be directly parsed, composed and bound by the `dotrain` tool.
