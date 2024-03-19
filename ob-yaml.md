@@ -148,7 +148,7 @@ deployers:
 
 ## Sentry Analytics
 
-The app will optionally collect analytics data to send to Sentry. This functionality is disabled by default and opt-in. If you are willing to share your analytics data it helps us to develop the and provide the best user experience. 
+The app will optionally collect analytics data to send to Sentry. This functionality is opt-in and disabled by default. If you are willing to share your analytics data, it will help us identify UI bugs and provide the best possible user experience.
 
 Optional fields:
 - `sentry` (defaults to 'false')
