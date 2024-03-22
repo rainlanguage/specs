@@ -148,13 +148,13 @@ deployers:
 
 ## Sentry Analytics
 
-The app will optionally collect analytics data to send to Sentry. This functionality is opt-in and disabled by default. This data helps us identify UI bugs and provide the best possible user experience.
+The app will optionally collect analytics data to send to Sentry. This functionality is opt-out and enabled by default. This data helps us identify UI bugs and provide the best possible user experience.
 
 Optional fields:
-- `sentry` (defaults to 'false')
+- `sentry` (defaults to 'true')
 
 ```
-sentry: true
+sentry: false
 ```
 
 ## Front matter yaml
