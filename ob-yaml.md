@@ -51,6 +51,36 @@ networks:
     currency: ETC
 ```
 
+### Using networks from
+
+To support prepopulating the app with networks we support `using-networks-from`
+which fetches well known lists of networks with well known formats and maps them
+internally to what we need/expect.
+
+Required fields:
+  - url
+  - format
+
+#### Supported formats
+
+##### ChainID
+
+Format: `chainid`
+
+The json as per https://chainid.network/chains.json
+
+Maps the `shortName` to the name of the network. Other fields are extracted as
+needed.
+
+### Example
+
+```
+using-networks-from:
+  chainid:
+    url: https://chainid.network/chains.json
+    format: chainid
+```
+
 ## Subgraphs
 
 Currently subgraphs are 1:1 with orderbooks, but this could and probably should change in the future. It would be far better for downstream implementations if a single subgraph could handle _at least_ all bytecode identical orderbooks deployed to the same network, if not a set of known compatible bytecodes. For that reason, it might seem overkill to specify subgraphs separately but they should have a 1:many relationship with orderbooks in the mid term.
