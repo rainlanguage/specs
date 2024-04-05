@@ -284,42 +284,78 @@ scenarios:
 
 ### front matter charts
 
-Any scenario can be charted as every concrete set of bindings can be treated as a data point. For a single concrete set, a single data point is produced, for a fuzzer or similar, a set of data points will be produced.
+Any scenario can be charted as every concrete set of bindings can be treated as
+a data point. For a single concrete set, a single data point is produced, for a
+fuzzer or similar, a set of data points will be produced.
 
-For ease of implementation we simply name the scenario to plot and then expose observable plot config directly to the yaml. Plot is a mostly declarative DSL from the creators of d3 https://observablehq.com/plot/features/plots
+Front matter supports both scalar `metrics` and `plots` for charts with x/y axes.
+
+#### Metrics
+
+Metrics are list of single scalar values each rendered with additional text.
+
+Required `metrics` keys per item:
+- `label` The title of the metric
+- `value` The stack path of the value to render for the metric
+
+Optional `metrics` keys per item
+
+- `description` Longer description of the item to render as text
+
+Example:
+
+```yaml
+metrics:
+  - label: Initial price
+    value: 0.5
+    description: The price this will be at launch
+  - label: Max price
+    value: 0.3
+```
+
+#### Plots
+
+For ease of implementation we simply name the scenario to plot and then expose
+observable plot config directly to the yaml. Plot is a mostly declarative DSL
+from the creators of d3 https://observablehq.com/plot/features/plots
 
 Required chart fields:
+
 - `<key>` named plots, need at least 1 for a chart
 
 Optional chart fields:
+
 - `scenario` name of the scenario to draw data from, falls back to the name of the chart if not set
+- `plots` mapping of charts to create
 
-Required plot fields
-- `data`: stack trace paths to draw x and y data from according to the scenario
-- `type`: the type of observable plot, e.g. `dot`, `ruleY`, etc.
+Required fields for each mapping under `plots`:
 
-Optional plot fields
-- `<key>` keys according to the observable plot DSL for each plot type
+- `marks`: list of marks to draw in the plot according to the observable lib
 
-```
+Required fields for each mapping under `marks`:
+
+- `type`: Can be `line` or `dot` as per observable
+- `options`: Needs keys `x` and `y` that specify a stack path to a value to plot
+
+Example:
+
+```yaml
 charts:
   fuzzer:
-    y-axis:
-      type: ruleY
-      domain: [0, 100]
-    normalized-amount:
-      type: dot
-        fill: blue
-      data:
-        # stack trace paths
-        x: 0.1.4
-        y: 0.6
-    denormalized-amount:
-      type: dot
-        fill: red
-      data:
-        x: 0.1.4
-        y: 0.5
+    scenario: some-scenario.foo
+    plots:
+      Normalized amount vs. Denormalized amount:
+        marks:
+          - type: line
+            options:
+              x: 0.1.4
+              y: 0.6
+      Final price vs. oracle price:
+        marks:
+          - type: dot
+            options:
+              x: 0.1.2
+              y: 0.7
 ```
 
 ### front matter deployments
