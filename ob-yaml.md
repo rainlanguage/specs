@@ -94,6 +94,19 @@ subgraphs:
   mainnet: https://...
 ```
 
+# Metaboards
+
+Metaboard is an onchain contract for posting Rain meta about a subject (an address). This meta is indexed by a metaboard subgraph. Currently these are 1-1 with networks.
+
+Metaboards have no fields, they're merely a name for a url string.
+
+```
+metaboards:
+  polygon: https://...
+  polygon2: https://...
+  mainnet: https://...
+```
+
 ## Orderbooks
 
 Every orderbook is a contract deployed on some chain (has an address) with a subgraph that knows how to index it into the form expected by the application.
