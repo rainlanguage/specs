@@ -270,8 +270,24 @@ Optional fields:
   - `runs` is an invalid key for concrete deployments, as there is no fuzzer and so elided bindings remain elided
 - `network` (fallback to network of same name if not set **root scenario only**)
 - `deployer` (fallback to deployer of same name if not set **root scenario only**)
+- `blocks` a block range for the fuzzer to iterate over. if runs is specified, the fuzzer will perform that number of runs for each block (not specifying is the same as `runs: 0`.  If `blocks` is specified as a mapping it may also take an `interval` field.
+```yaml
+blocks: [a..b]
 
+blocks:
+  range: [a..b]
+  interval: 5
+
+blocks:
+  range: [a..] # block a to latest
+
+blocks:
+  range: [..b] # genesis to block b
 ```
+
+A complete scenario could look like:
+
+```yaml
 scenarios:
   mainnet:
     bindings:
@@ -288,7 +304,10 @@ scenarios:
     network: testnet
     deployer: testnet
     orderbook: testnet
-    runs: 100000
+    runs: 10
+    blocks:
+      range: [10000..]
+      interval: 1000
     # bar intentionally not set so it would be fuzzed
     bindings:
       foo: ...
@@ -347,8 +366,8 @@ Required fields for each mapping under `plots`:
 
 Required fields for each mapping under `marks`:
 
-- `type`: Can be `line` or `dot` as per observable
-- `options`: Needs keys `x` and `y` that specify a stack path to a value to plot
+- `type`: Can be `line`, `dot` or `recty` as per observable
+- `options`: May be keys `x` and `y` that specify a stack path to a value to plot, or a `transform` (see examples below).
 
 Example:
 
@@ -369,6 +388,49 @@ charts:
             options:
               x: 0.1.2
               y: 0.7
+```
+
+Histogram example:
+See https://observablehq.com/plot/transforms/bin#bin-options
+
+```yaml
+charts:
+  histogram-example:
+    scenario: some.foo
+    plots:
+      my-histogram:
+        marks:
+          - type: recty
+            options:
+              transform:
+                type: binx
+                content:
+                  outputs:
+                    y: "count"
+                  options:
+                    x: "0.5" # the stack item being binned
+                    thresholds: 25 # the number of bins
+```
+
+Hexbin example:
+See https://observablehq.com/plot/transforms/hexbin
+
+```yaml
+charts:
+  plots:
+    my-hexbin:
+      marks:
+      - type: dot
+        options:
+          transform:
+              type: hexbin
+              content:
+                  outputs:
+                      fill: count
+                  options:
+                      x: 0.0
+                      y: 0.1
+                      bin-width: 50
 ```
 
 ### front matter deployments
