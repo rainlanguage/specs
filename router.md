@@ -15,24 +15,16 @@ A library that finds (uniswap v2 and v3 pools (possibly other protocols)) on an 
 - should be reproduceble, ie once the needed data is available, routes can be calculated for any token amount and any token combination that is available in the data.
 
 
-## Pool Finder Design 
-A pool address can be calculated using `create2` logic by having 2 token addresses, factory address and `initCodeHash`, however the calculated pool address might not be deployed onchain, ie a direct pool for a token pair A/B is not available, so this brings in the usage of intermediate pools/tokens that will be used to be able to perform the swap between token A/B. 
-Intermediate tokens (called bases throughout this document) can be supplied at runtime or can have a default per chain as most univ2/v3 pools are deployed against well-known, highly adopted, commonly traded, etc tokens such as USDT, USDC, WETH, WBTC, DAI.
+The ultimate goal here is to find a good balance between performance/rpc consumption and how good a route is at a ceratin block. a found route can be used for some time until a recalculation process is triggered again.
 
-So when trying to find pools for token pair A/B, the bases can be supplied as option (or use defaults), calculate the pool addresses for each combination and then check if the calculated addresses actually exist onchain or not, the ones that do exist will be stored into a struct field with their token details. the ones that do not exist, will be stored into the struct `blacklist` field, so next time there is new request for a new token pair, same process is repeated but before checking if the calculated addresses exist onchain or not, they are checked against the `blacklist` and those that already are known to exist.
-This will gurantee no same pool address is checked against onchain data twice during runtime as well as reducing the need for rpc calls as more pools are discovered.
-So they will be available throughout the `router` program execution once there is a request to find a route for a token pair.
 
-The `blacklist` needs to be purged once in while, the reason for this is that some pools might get deployed after they have gone into the blacklist, or there might have been some https/rpc error when a pool was initially checked that it exists onchain or not. 
-A simple logic can implemented to check the blacklist pools once in a while and if they happen to exist onchain, they will get removed from the blacklist, another suggestion can be to have a `pending blacklist`, ie not put pools directly into the blacklist for the first time they return error when read from onchain, but put them in a pending state, and if they happen to return error a few more times, then they will go into the blacklist.
+## 1- Pool Finder
+finding available pools for token pair A/B, with additional tokens (called bases in this doc), so any paired combinations of tokens A, B and bases can be generated (using create2 logic for every available dex on the operatiing chain), then they can be checked onchain that if they exist or not, those that dont will be filtered out, and those that do exist, will be included as the final result as all the available pools of all available dexes on the operating chain, once pools are found, their required data (such as reserves balances, ticklens, etc) can be fetched (from onchain).
+another approach for finding pools is to use indexers, ie check each token pair combination on the indexer and get their data.
+This process/functionalities can be wrapped with a struct with a hashmap to implement a multichain functionality.
 
-There should be methods to export/import the results, so the database of the found pools can be stored on disk and loaded from, to lower the rpc consumption as much as possible, after all once a pool is found, there is no need to find it again if the results are stored on a disk that can be loaded again at runtime.
-
-Since the database can grow overtime, it is logical to store them sorted, resulting in increasing performance on serach actions. the goal here is performance, so any logic or external library can be used to achieve this, not just limited to a sorted set/map.
-
-This struct will be per chain basis, but a wrapper struct with a `map` of chain ids against it can be implemented to cover multichain implementation.
-
-## Router Design 
-The ultimate goal here is to find a good balance between performance/rpc consumption and how good a route is at a ceratin block.
-The overal design for calculating a good enough route for token pair A/B requires knowing the reserves balances of the involved pools (direct and indirect), and for univ3 it would require some extra data ontop (ticklense as an example). once these data are available then a route can be calculated that can be consumed by the `RouteProcessor` contract.
-The pools (direct and indirect) that their data need to be fetched are being provided by the `PoolFinder`, the found route can be used for the token pair A/B for some time (like 20 minutes) until there is a need to refetch the reserves data again, this is because calculating the best route on each block will come at the expense of more rpc calls and lower performance, so at the end of the day it wont actually serve the purpose of the `arb-bot`, unless calculating a route on per block basis can be achieved in a way that doesnt eliminate any of the mentioned goals and requirements.
+## 2 - find routes:
+once the pool data is available, for each pool with token A, the `priceImpact` and `amountOut` can be calculated with replicating the math logic that happens onchain on their contract. (this would contain either direct pool of A/B or any pool with A/* for finding a multi hop route, in this case 1 hop max)
+for 1 hop routes, the result of previous step (amountOut of previous) can be used to calculated `priceImpact` and `amountOut` of the pools with the in-between token by doing the same process, and then the same process will be repeated for any pools with token B and the output token of previous step.
+once these values are calculated, they can be compared and the best outcome can be chosen as the route for A/B (it can end up being a direct route or a multi route with 1 hop).(ideally this design should be expandable, ie in a way that in future can be upgraded to be able to do more hops, so most probably a recursive or looped based design)
+once the route and its legs are ready, the final route code can be built by following the logic that sushi lib has  for each type of pool, the logic is pretty straight forward, as our case doesnt involve any non uniswap based dex, so we either have univ2 or v3, (they each have RP based code and some simple logic to set the direction), once each leg data has been constructed, they will be merged to form the final route code that can be used to submit onchain on a RP contract.
