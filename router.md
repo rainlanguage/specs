@@ -17,7 +17,7 @@ A standalone library that finds (uniswap v2 and v3 pools (possibly other protoco
 The ultimate goal here is to find a good balance between performance/rpc consumption and how good a route is at a ceratin block. calculating the route on each block is ofc the ideal case as it ends up providing the most accurate/reliable result, but a found route can be used for some time until it is recalculation again.
 
 
-## 1- Find Pools:
+## 1 - Find Pools:
 Finding available pools for token pair A/B, with custom additional tokens (called bases in this doc, custom tokens are mostly high liq and widely adopted tokens such as USDT, USDC, DAI, WETH, WBTC), so any paired combinations of tokens A, B and bases can be generated (using create2 logic for every available dex on the operatiing chain), then they can be checked onchain that if they exist or not, those that dont will be filtered out, and those that do exist, will be included as the final result as all the available pools of all available dexes on the operating chain, once pools are found, their required data (such as reserves balances, ticklens, etc) can be fetched (from onchain).
 
 Another approach for finding pools is to use indexers, ie check each token pair combination on the indexer and get their data.
