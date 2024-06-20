@@ -14,8 +14,7 @@ A standalone library that finds (uniswap v2 and v3 pools (possibly other protoco
 - should be as performant as possible since there is a very tight margin on each block when arb bot is running on per block basis
 - should be reproduceble, ie once the needed data is available, routes can be calculated for any token amount and any token combination that is available in the data.
 
-
-The ultimate goal here is to find a good balance between performance/rpc consumption and how good a route is at a ceratin block. a found route can be used for some time until a recalculation process is triggered again.
+The ultimate goal here is to find a good balance between performance/rpc consumption and how good a route is at a ceratin block. calculating the route on each block is ofc the ideal case as it ends up providing the most accurate/reliable result, but a found route can be used for some time until it is recalculation again.
 
 
 ## 1- Pool Finder
