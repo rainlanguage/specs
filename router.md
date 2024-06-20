@@ -18,13 +18,17 @@ The ultimate goal here is to find a good balance between performance/rpc consump
 
 
 ## 1- Pool Finder
-finding available pools for token pair A/B, with custom additional tokens (called bases in this doc) (custom tokens are mostly high liq and widely adopted tokens such as USDT, USDC, DAI, WETH, WBTC), so any paired combinations of tokens A, B and bases can be generated (using create2 logic for every available dex on the operatiing chain), then they can be checked onchain that if they exist or not, those that dont will be filtered out, and those that do exist, will be included as the final result as all the available pools of all available dexes on the operating chain, once pools are found, their required data (such as reserves balances, ticklens, etc) can be fetched (from onchain).
-another approach for finding pools is to use indexers, ie check each token pair combination on the indexer and get their data.
+Finding available pools for token pair A/B, with custom additional tokens (called bases in this doc, custom tokens are mostly high liq and widely adopted tokens such as USDT, USDC, DAI, WETH, WBTC), so any paired combinations of tokens A, B and bases can be generated (using create2 logic for every available dex on the operatiing chain), then they can be checked onchain that if they exist or not, those that dont will be filtered out, and those that do exist, will be included as the final result as all the available pools of all available dexes on the operating chain, once pools are found, their required data (such as reserves balances, ticklens, etc) can be fetched (from onchain).
+
+Another approach for finding pools is to use indexers, ie check each token pair combination on the indexer and get their data.
 
 This process/functionalities can be wrapped with a struct with a hashmap to provide a multichain functionality.
 
 ## 2 - find routes:
-Once the pool data is available (from pool finder), for each pool with token A, the `priceImpact` and `amountOut` can be calculated with replicating the math logic that happens onchain on the contract, (this would contain either direct pool of A/B or any pool with A/* for finding a multiroute, in this case 1 hop max)
-for 1 hop routes, the result of previous step (amountOut of previous) can be used to calculated `priceImpact` and `amountOut` of the pools with the in-between token (*/B) by doing the same process.
-once these values are calculated, they can be compared and the best outcome can be chosen as the route for A/B (it can end up being a direct route or a multiroute with 1 hop; ideally this design should be expandable (A/*, (*/* x n), */B), ie in a way that in future can be upgraded to be able to do more hops, so most probably a recursive or looped based design)
-once the route and its legs are ready, the final route code can be built by following the logic that sushi lib has  for each type of pool, the logic is pretty straight forward, as our case doesnt involve any non uniswap based dex, so we either have univ2 or v3, (they each have RP based code and some simple logic to set the direction), once each leg data has been constructed, they will be merged to form the final route code that can be used to submit onchain on a RP contract.
+Once the pool data is available (from pool finder), for each pool with token A (A/*), the `priceImpact` and `amountOut` can be calculated with replicating the math logic that happens onchain on the contract (this would contain either direct pool of A/B or any pool with A/* for finding a multiroute, in this case 1 hop max).
+
+For 1 hop routes, the result of previous step (amountOut of previous) can be used to calculated `priceImpact` and `amountOut` of the pools with the in-between token (*/B) by doing the same process.
+
+once these values are calculated, they can be compared and the best outcome can be chosen as the route for A/B (it can end up being a direct route or a multiroute with 1 hop; ideally this design should be expandable (A/*, (*/* x n), */B), ie in a way that in future can be upgraded to be able to do more hops, so most probably a recursive or looped based design).
+
+Once the route and its legs are ready, the final route code can be built by following the logic that sushi lib has for each type of pool, the logic is pretty straight forward, as our case doesnt involve any non uniswap based dex, so we either have univ2 or v3, (they each have RP based code and some simple logic to set the direction, etc), once each leg's data has been constructed, they will be merged together to form the final route code that can be used to submit a tx onchain on a RP contract.
