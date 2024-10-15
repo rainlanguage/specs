@@ -271,6 +271,8 @@ Optional fields:
 - `network` (fallback to network of same name if not set **root scenario only**)
 - `deployer` (fallback to deployer of same name if not set **root scenario only**)
 - `blocks` a block range for the fuzzer to iterate over. if runs is specified, the fuzzer will perform that number of runs for each block (not specifying is the same as `runs: 0`.  If `blocks` is specified as a mapping it may also take an `interval` field.
+- `entrypoint` is a custom entrypoint to use for the scenario. only charts can use this entrypoint, deployments are not affected by this setting.
+
 ```yaml
 blocks: [a..b]
 
