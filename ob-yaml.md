@@ -452,6 +452,3 @@ deployments:
     scenario: scenario2
     order: order2
 ```
-
-## Unit tests
-
