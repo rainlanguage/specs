@@ -189,6 +189,18 @@ deployers:
     network: polygon
 ```
 
+## Accounts
+
+Accounts are optional filters that can be used to filter the orderbook to only show orders and vaults that belong to that account.
+
+Account aliases are mapped to account addresses.
+
+```
+accounts:
+  my-account: 0x...
+  my-other-account: 0x...
+```
+
 ## Sentry Analytics
 
 The app will optionally collect analytics data to send to Sentry. This functionality is opt-out and enabled by default. This data helps us identify UI bugs and provide the best possible user experience.
