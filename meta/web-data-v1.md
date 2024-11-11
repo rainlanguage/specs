@@ -67,6 +67,20 @@ The payload is optional, arbitrary length and contextual to the API that the
 web data describes. The client and server are expected to understand what it is
 useful for, if anything (e.g. specifying trading pairs, token info, etc.).
 
+## Server validation
+
+At a minimum the server MUST validate:
+
+- The signature is valid and meets any authorization requirements
+- The web data hash is expected
+  - Each API must know and check the web data hash that it is serving
+- The unix timestamp is not expired
+  - Server decides expiry rules, several minutes should be adequate for most use
+    cases
+- The nonce is unique across all known non-expired requests
+  - Including from different signers
+- Any additional contextual validation rules imposed by the API
+
 ## Intended workflow
 
 1. Some transaction includes a data reference, i.e. the hash of some metadata
