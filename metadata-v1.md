@@ -150,7 +150,8 @@ this document are already handling.
 | 0xff1c198cec3b48a7 | Rainlang v1                               |
 | 0xffdac2f2f37be894 | Dotrain v1                                |
 | 0xffdb988a8cd04d32 | ExpressionDeployerV2 bytecode v1          |
-| 0xff13109e41336ff2 | Rainlang source meta v1
+| 0xff13109e41336ff2 | Rainlang source meta v1                   |
+| 0xff5dcce9b571ba42 | Web data v1                               |
 
 This document will be updated as new numbers become known but also feel free to
 build systems and applications with your own numbers and interpretations.
