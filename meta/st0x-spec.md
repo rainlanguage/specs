@@ -7,7 +7,7 @@ Provide signed price quotes for specific trading pairs that can be used by solve
 ## Magic Numbers
 
 - Web data metadata magic number: `0xff5dcce9b571ba42`
-- st0x API magic number: `0xff5d577062616972` ("st0x pair" in hex)
+- st0x API magic number: `0x7374307870616972` ("st0xpair" in hex)
 
 ## Server Advertisement
 
@@ -19,16 +19,9 @@ Each trading pair requires its own advertisement. Orders reference these adverti
 
 ## Request Format
 
-Clients (solvers) POST raw octet streams to the server URL with the following binary format:
+Clients (solvers) then POST raw octet streams to the server URL according to the Web Data V1 specification, where the hash is from the server advertisement on the metaboard.
 
-```
-[ 65 byte ECDSA signature ]  # Signs the hash of all following bytes
-[ 32 byte keccak256 hash ]   # Hash of web data from metaboard
-[ 8 byte unix timestamp ]    # Seconds since epoch
-[ 32 byte nonce ]           # Random bytes for uniqueness
-```
-
-No additional payload needed since each endpoint is pair-specific.
+No additional payload is needed, since each endpoint is pair-specific.
 
 ## Server Response
 
@@ -38,21 +31,20 @@ The server returns a SignedContextV1 structure containing:
 struct SignedContextV1 {
     address signer;           // Account that signed the context
     uint256[] context;        // The signed data array
-    bytes signature;          // EIP-191 compliant signature
+    bytes signature;          // EIP-1271 compliant signature
 }
 ```
 
 The `context` array contains:
 ```
 [
-    uint256 ioRatio,        // Price ratio for the trading pair
+    uint256 ioRatio,        // Price ratio for the trading pair in 18 fixed point decimal
     uint256 pairHash,       // keccak256 hash of the pair name (e.g. "TSLAUSD")
-    uint256 validFrom,      // Timestamp in seconds when quote becomes valid
     uint256 expiry          // Timestamp in seconds when quote expires
 ]
 ```
 
-The signature MUST be over the packed encoded bytes of the context array (concatenated without length prefix), hashed, and handled per EIP-191.
+The signature MUST be over the ABI packed encoded bytes of the context array (concatenated without length prefix), hashed, and handled per EIP-191.
 
 ## Server Requirements
 
@@ -61,8 +53,7 @@ The server MUST:
 2. Verify the web data hash matches its own advertisement for this specific pair
 3. Check timestamp is not expired
 4. Ensure nonce hasn't been used in a non-expired request
-5. Set appropriate validFrom and expiry times for the quote
-6. Only accept requests if the signing key has a nonzero L1 balance (optional anti-sybil measure)
+5. Only accept requests if the signing key has a nonzero L1 balance (optional anti-sybil measure)
 
 ## Client Usage
 
