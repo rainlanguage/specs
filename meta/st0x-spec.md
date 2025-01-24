@@ -7,7 +7,7 @@ Provide signed price quotes for specific trading pairs that can be used by solve
 ## Magic Numbers
 
 - Web data metadata magic number: `0xff5dcce9b571ba42`
-- st0x API magic number: `0x7374307870616972` ("st0xpair" in hex)
+- st0x API magic number: `0xfff5093d312bd907` (first 7 bytes of keccak256("st0xpair") prepended with 0xff)
 
 ## Server Advertisement
 
@@ -39,8 +39,11 @@ The `context` array contains:
 ```
 [
     uint256 ioRatio,        // Price ratio for the trading pair in 18 fixed point decimal
-    uint256 pairHash,       // keccak256 hash of the pair name (e.g. "TSLAUSD")
-    uint256 expiry          // Timestamp in seconds when quote expires
+    uint256 input,          // ABI encoded address of the input token (ie padded to 32 bytes)
+    uint256 output,         // ABI encoded address of the output token (ie padded to 32 bytes)
+    uint256 expiry,         // Timestamp in seconds when quote expires
+    uint256 chainId,        // Chain ID of the chain the quote is valid on
+    
 ]
 ```
 
