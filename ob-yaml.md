@@ -165,6 +165,18 @@ tokens:
     address: 0x6b175474e89094c44da98b954eedeac495271d0f
 ```
 
+### Using tokens from
+
+To support prepopulating the app with token information we support `using-tokens-from` which fetches well known lists of tokens with well known formats and maps them internally to what we need/expect. The format follows the standard defined at https://tokenlists.org/
+
+The application will fetch the specified URL, parse the JSON token list, and map tokens to known networks using the chain ID. It will generate the internal token entries automatically. Ensure the networks referenced by chain ID in the token list are defined in the `networks` section.
+
+### Example
+
+```yaml
+using-tokens-from: https://tokens.coingecko.com/uniswap/all.json
+```
+
 ## Deployers
 
 Each deployer contract serves as the logical entrypoint into an entire DISpair (the associated addresses can be queried from the deployer onchain).
