@@ -12,6 +12,19 @@
 - UX/UI agnostic
   - any combination of these yaml structures _could_ appear in any section of the app for editing/viewing/composing
 
+## Specification Version
+
+To handle potential breaking changes in the YAML format itself, a top-level `spec-version` field should be included. This allows tooling to identify the expected structure and handle different versions appropriately.
+
+Required fields:
+  - `spec-version`
+
+### Example
+
+```yaml
+spec-version: 1.0.0
+```
+
 ## Networks
 
 "Network" is the terminology used by metamask, foundry, hardhat, and implied by terms such as "mainnet" and "testnet".
