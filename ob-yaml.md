@@ -139,7 +139,7 @@ orderbooks:
 
 At the minimum a token is a network, address and decimals. While ERC20 doesn't mandate decimals on the contract, it is required in practise to allow for standardized decimal 18 math, as non-18 decimal token values need to be scaled up/down to match. If a token has `0` decimals then this implies there are no fractional values and any amounts are to be treated as literal integers.
 
-> **Note:** The `tokens` mapping is optional and may be omitted entirely if no tokens need to be defined beforehand. If there are select tokens set in the gui configuation, this mapping will be automatically generated on token selection.
+> **Note:** The `tokens` mapping is optional and can be omitted if no tokens need to be predefined. If tokens are selected via the GUI, this mapping will be generated automatically upon selection.
 
 The GUI MAY query the network rpc + address to attempt to populate the optional fields (notably decimals). Note that the ERC20 specification explicitly DOES NOT mandate that tokens implement the metadata methods, including decimals. If the contract query fails, and the relevant optional field has not been specified in the yaml, this MUST be treated as an error for the user to fix. NEVER assume decimal values that haven't been provided by the contract/user.
 
@@ -263,8 +263,7 @@ orders:
         vault-id: 0xabcd
 ```
 
-> **Note:** Tokens referenced in `inputs` or `outputs` do not strictly need to be predefined in the top-level `tokens` mapping for the YAML file to be valid. However, before an order can be deployed, the application (e.g., the GUI or deployment tool) must be able to resolve the token's details (network, address, and decimals).
-> This typically happens either by finding the token in the `tokens` mapping or by successfully querying the contract on-chain based on the provided information (selecting a token using the SDK).
+> **Note:** Tokens referenced in `inputs` or `outputs` do not need to be predefined in the top-level `tokens` mapping for the YAML file to be valid. However, before deployment, the application must resolve token details (network, address, decimals) either from the `tokens` mapping or by querying the contract on-chain (for example, via the SDK).
 
 ### front matter scenarios
 
