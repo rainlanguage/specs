@@ -17,7 +17,8 @@
 To handle potential breaking changes in the YAML format itself, a top-level `spec-version` field should be included. This allows tooling to identify the expected structure and handle different versions appropriately.
 
 Required fields:
-  - `spec-version`
+
+- `spec-version`
 
 ### Example
 
