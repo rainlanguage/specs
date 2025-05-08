@@ -6,7 +6,7 @@ The `gui` section within the YAML configuration provides metadata specifically t
 
 This section dictates how strategy deployments are named, described, and how their configurable parameters (bindings, deposits, token selections) should be rendered as interactive UI elements. It allows for user-friendly labels, descriptions, default values, and predefined options (presets) to simplify the user experience.
 
-**Note**: While the underlying YAML parser treats all scalar values initially as strings, the application expects these strings to conform to the specified semantic types (e.g., `"true"` or `"false"` for Boolean fields) for successful processing. The types listed below refer to these expected semantic types.
+**Note**: While the underlying YAML parser treats all scalar values initially as strings, the application expects these strings to conform to the specified semantic types (e.g., `true` or `false` for Boolean fields) for successful processing. The types listed below refer to these expected semantic types.
 
 ## Top-Level `gui` Object
 
