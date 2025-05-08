@@ -20,7 +20,7 @@ Need to define many networks that can be switched between at any time. Generally
 
 Required fields:
 
-- `rpc`
+- `rpcs`
 - `chain-id`
 
 Optional fields:
@@ -40,12 +40,15 @@ https://besu.hyperledger.org/23.4.0/public-networks/concepts/network-and-chain-i
 ```
 networks:
   mainnet:
-    rpc: https://eth.llamarpc.com
+    rpcs: 
+      - https://eth.llamarpc.com
+      - https://rpc.ankr.com/eth
     chain-id: 0x1
 
   classic:
     label: ETH classic
-    rpc: https://etc.rivet.link
+    rpcs: 
+      - https://etc.rivet.link
     chain-id: 61
     network-id: 1
     currency: ETC
