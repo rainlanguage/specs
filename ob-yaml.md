@@ -158,6 +158,12 @@ orderbooks:
 
 At the minimum a token is a network, address and decimals. While ERC20 doesn't mandate decimals on the contract, it is required in practise to allow for standardized decimal 18 math, as non-18 decimal token values need to be scaled up/down to match. If a token has `0` decimals then this implies there are no fractional values and any amounts are to be treated as literal integers.
 
+> **Note:** The top-level `tokens` field is optional and may be omitted if no tokens need to be predefined. Orders can reference tokens from other sources, including:
+> - `using-tokens-from`
+> - the GUI’s `select-tokens` field under the top-level `gui` section
+>
+> The top-level `tokens` mapping will be populated automatically by these sources when used.
+
 The GUI MAY query the network rpc + address to attempt to populate the optional fields (notably decimals). Note that the ERC20 specification explicitly DOES NOT mandate that tokens implement the metadata methods, including decimals. If the contract query fails, and the relevant optional field has not been specified in the yaml, this MUST be treated as an error for the user to fix. NEVER assume decimal values that haven't been provided by the contract/user.
 
 Required fields:
