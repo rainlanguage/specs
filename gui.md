@@ -116,8 +116,14 @@ deposits:
       - "100"
       - "1000"
       - "10000"
+    validation:
+      minimum: "0"
+      maximum: "100000"
+      multipleOf: "1" # Ensures the value is a whole number if desired
   - token: token2
     # No presets defined for this token
+    validation:
+      minimum: "0.001" # Example for a token with high precision
 ```
 
 ### Fields
@@ -130,6 +136,10 @@ deposits:
   * **Type**: List of Strings
   * **Required**: No
   * **Description**: An optional list of suggested deposit amounts (as strings) to display as quick options in the UI. The UI will typically show these alongside the primary deposit input field.
+* `validation`
+  * **Type**: [Validation Object](#validation-object) (specifically, the numeric properties)
+  * **Required**: No
+  * **Description**: An optional object defining validation rules for the deposit amount. For deposits, this will always use numeric validation rules. See the [Validation Object](#validation-object) section for details on available numeric validation fields like `minimum`, `maximum`, and `multipleOf`.
 
 ## Field Item
 
@@ -139,15 +149,28 @@ Each item in the `fields` list defines a user-configurable input field, mapping 
 # Example within a deployment's fields list:
 fields:
   - binding: binding-1 # The corresponding binding in the Rainlang source
-    name: Field 1 name
-    description: Field 1 description
+    name: Price
+    description: The price for the order
     presets:
       # ... preset items for this field ...
-    default: some-default-value
+    default: "100.50"
+    validation:
+      type: numeric
+      minimum: "0.01"
+      multipleOf: "0.01"
   - binding: binding-2
-    name: Field 2 name
-    description: Field 2 description
-    # No presets for this field
+    name: Slippage Tolerance
+    description: Maximum allowed slippage in percentage
+    validation:
+      type: numeric
+      minimum: "0"
+      maximum: "100"
+  - binding: user-provided-note
+    name: Order Note
+    description: A custom note for the order
+    validation:
+      type: string
+      maxLength: "140"
     show-custom-field: true # Explicitly allow custom input
 ```
 
@@ -173,6 +196,10 @@ fields:
   * **Type**: String
   * **Required**: No
   * **Description**: An optional default value (as a string) to pre-populate the input field with.
+* `validation`
+  * **Type**: [Validation Object](#validation-object)
+  * **Required**: No
+  * **Description**: An optional object defining validation rules for the field's value. This includes specifying the `type` (e.g., "numeric", "string") and type-specific rules like `minimum`/`maximum` for numerics, or `minLength`/`maxLength` for strings. See the [Validation Object](#validation-object) section for details.
 * `show-custom-field`
   * **Type**: Boolean
   * **Required**: No
@@ -231,4 +258,68 @@ select-tokens:
   * **Type**: String
   * **Required**: No
   * **Description**: An optional description providing context for why this token is selectable here.
+
+## Validation Object
+
+The `validation` object is used within `Deposit Item` and `Field Item` to specify rules that the user's input must adhere to. The available validation rules depend on the nature of the input (numeric or string).
+
+All values for validation rules (e.g., `minimum`, `maxLength`) are provided as strings but are expected to be interpreted semantically by the UI/application (e.g., "100" as a number, "5" as a length).
+
+```yaml
+# Example for a numeric field validation:
+validation:
+  type: "numeric"
+  minimum: "0"
+  maximum: "10000"
+  multipleOf: "0.01"
+
+# Example for a string field validation:
+validation:
+  type: "string"
+  minLength: "1"
+  maxLength: "255"
+
+# Example for a deposit validation (implicitly numeric):
+validation: # For deposits, 'type' is implicitly "numeric"
+  minimum: "0.000001"
+  maximum: "1000"
+```
+
+### Common Fields
+
+* `type` (Only for `Field Item` validation)
+  * **Type**: String
+  * **Required**: Yes (for `Field Item`)
+  * **Description**: Specifies the expected data type of the input. Must be either `"numeric"` or `"string"`.
+  * **Note**: For `Deposit Item`, the type is implicitly `"numeric"` and this field should not be specified.
+
+### Numeric Validation Fields
+
+These fields apply when `type` is `"numeric"` (or for `Deposit Item` validation).
+
+* `minimum`
+  * **Type**: String (representing a number)
+  * **Required**: No
+  * **Description**: The minimum allowed value (inclusive). Input must be greater than or equal to this value.
+* `maximum`
+  * **Type**: String (representing a number)
+  * **Required**: No
+  * **Description**: The maximum allowed value (inclusive). Input must be less than or equal to this value.
+* `multipleOf`
+  * **Type**: String (representing a number)
+  * **Required**: No
+  * **Description**: The input value must be a multiple of this number. For example, if `multipleOf` is `"0.01"`, then `"1.02"` is valid, but `"1.025"` is not.
+
+### String Validation Fields
+
+These fields apply when `type` is `"string"`.
+
+* `minLength`
+  * **Type**: String (representing an integer)
+  * **Required**: No
+  * **Description**: The minimum allowed length of the string (inclusive). The string length must be greater than or equal to this value.
+* `maxLength`
+  * **Type**: String (representing an integer)
+  * **Required**: No
+  * **Description**: The maximum allowed length of the string (inclusive). The string length must be less than or equal to this value.
 
