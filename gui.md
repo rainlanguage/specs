@@ -137,9 +137,9 @@ deposits:
   * **Required**: No
   * **Description**: An optional list of suggested deposit amounts (as strings) to display as quick options in the UI. The UI will typically show these alongside the primary deposit input field.
 * `validation`
-  * **Type**: [Validation Object](#validation-object) (specifically, the numeric properties)
+  * **Type**: [Validation Object](#validation-object) (specifically, the number properties)
   * **Required**: No
-  * **Description**: An optional object defining validation rules for the deposit amount. For deposits, this will always use numeric validation rules. See the [Validation Object](#validation-object) section for details on available numeric validation fields like `minimum`, `maximum`, and `multipleOf`.
+  * **Description**: An optional object defining validation rules for the deposit amount. For deposits, this will always use number validation rules. See the [Validation Object](#validation-object) section for details on available number validation fields like `minimum`, `maximum`, and `multipleOf`.
 
 ## Field Item
 
@@ -155,14 +155,14 @@ fields:
       # ... preset items for this field ...
     default: "100.50"
     validation:
-      type: numeric
+      type: number
       minimum: "0.01"
       multipleOf: "0.01"
   - binding: binding-2
     name: Slippage Tolerance
     description: Maximum allowed slippage in percentage
     validation:
-      type: numeric
+      type: number
       minimum: "0"
       maximum: "100"
   - binding: user-provided-note
@@ -199,7 +199,7 @@ fields:
 * `validation`
   * **Type**: [Validation Object](#validation-object)
   * **Required**: No
-  * **Description**: An optional object defining validation rules for the field's value. This includes specifying the `type` (e.g., "numeric", "string") and type-specific rules like `minimum`/`maximum` for numerics, or `minLength`/`maxLength` for strings. See the [Validation Object](#validation-object) section for details.
+  * **Description**: An optional object defining validation rules for the field's value. This includes specifying the `type` (e.g., "number", "string") and type-specific rules like `minimum`/`maximum` for numbers, or `minLength`/`maxLength` for strings. See the [Validation Object](#validation-object) section for details.
 * `show-custom-field`
   * **Type**: Boolean
   * **Required**: No
@@ -261,14 +261,14 @@ select-tokens:
 
 ## Validation Object
 
-The `validation` object is used within `Deposit Item` and `Field Item` to specify rules that the user's input must adhere to. The available validation rules depend on the nature of the input (numeric or string).
+The `validation` object is used within `Deposit Item` and `Field Item` to specify rules that the user's input must adhere to. The available validation rules depend on the nature of the input (number or string).
 
 All values for validation rules (e.g., `minimum`, `maxLength`) are provided as strings but are expected to be interpreted semantically by the UI/application (e.g., "100" as a number, "5" as a length).
 
 ```yaml
-# Example for a numeric field validation:
+# Example for a number field validation:
 validation:
-  type: "numeric"
+  type: "number"
   minimum: "0"
   maximum: "10000"
   multipleOf: "0.01"
@@ -279,8 +279,8 @@ validation:
   minLength: "1"
   maxLength: "255"
 
-# Example for a deposit validation (implicitly numeric):
-validation: # For deposits, 'type' is implicitly "numeric"
+# Example for a deposit validation (implicitly number):
+validation: # For deposits, 'type' is implicitly "number"
   minimum: "0.000001"
   maximum: "1000"
 ```
@@ -290,12 +290,12 @@ validation: # For deposits, 'type' is implicitly "numeric"
 * `type` (Only for `Field Item` validation)
   * **Type**: String
   * **Required**: Yes (for `Field Item`)
-  * **Description**: Specifies the expected data type of the input. Must be either `"numeric"` or `"string"`.
-  * **Note**: For `Deposit Item`, the type is implicitly `"numeric"` and this field should not be specified.
+  * **Description**: Specifies the expected data type of the input. Must be either `"number"` or `"string"`.
+  * **Note**: For `Deposit Item`, the type is implicitly `"number"` and this field should not be specified.
 
-### Numeric Validation Fields
+### number Validation Fields
 
-These fields apply when `type` is `"numeric"` (or for `Deposit Item` validation).
+These fields apply when `type` is `"number"` (or for `Deposit Item` validation).
 
 * `minimum`
   * **Type**: String (representing a number)
