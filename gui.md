@@ -283,6 +283,10 @@ validation:
 validation: # For deposits, 'type' is implicitly "number"
   minimum: "0.000001"
   maximum: "1000"
+
+# Example for a boolean field validation:
+validation:
+  type: "boolean"
 ```
 
 ### Common Fields
@@ -290,7 +294,7 @@ validation: # For deposits, 'type' is implicitly "number"
 * `type` (Only for `Field Item` validation)
   * **Type**: String
   * **Required**: Yes (for `Field Item`)
-  * **Description**: Specifies the expected data type of the input. Must be either `"number"` or `"string"`.
+  * **Description**: Specifies the expected data type of the input. Must be either `"number"`, `"string"`, or `"boolean"`.
   * **Note**: For `Deposit Item`, the type is implicitly `"number"` and this field should not be specified.
 
 ### number Validation Fields
@@ -322,4 +326,10 @@ These fields apply when `type` is `"string"`.
   * **Type**: String (representing an integer)
   * **Required**: No
   * **Description**: The maximum allowed length of the string (inclusive). The string length must be less than or equal to this value.
+
+### Boolean Validation Fields
+
+These fields apply when `type` is `"boolean"`.
+
+* No additional validation fields are available for boolean type. The value must be either `"true"`, `"false"`, `"1"`, or `"0"` (as strings).
 
