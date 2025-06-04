@@ -14,18 +14,18 @@
 
 ## Specification Version
 
-To handle potential breaking changes in the YAML format itself, a top-level `spec-version` field should be included. This allows tooling to identify the expected structure and handle different versions appropriately.
+To handle potential breaking changes in the YAML format itself, a top-level `version` field should be included. This allows tooling to identify the expected structure and handle different versions appropriately.
 
-The `spec-version` is a simple integer (e.g., `1`), not a semantic version (like `1.0.0`). Only whole numbers should be used.
+The `version` is a simple integer (e.g., `1`), not a semantic version (like `1.0.0`). Only whole numbers should be used.
 
 Required fields:
 
-- `spec-version`
+- `version`
 
 ### Example
 
 ```yaml
-spec-version: 1
+version: 1
 ```
 
 ## Networks
