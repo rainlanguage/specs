@@ -194,12 +194,17 @@ tokens:
 
 To support prepopulating the app with token information we support `using-tokens-from` which fetches well known lists of tokens with well known formats and maps them internally to what we need/expect. The format follows the standard defined at https://tokenlists.org/
 
-The application will fetch the specified URL, parse the JSON token list, and map tokens to known networks using the chain ID. It will generate the internal token entries automatically. Ensure the networks referenced by chain ID in the token list are defined in the `networks` section.
+The application will fetch the specified URLs, parse the JSON token lists, and map tokens to known networks using the chain ID. It will generate the internal token entries automatically. Ensure the networks referenced by chain ID in the token lists are defined in the `networks` section.
+
+The `using-tokens-from` field is a list of URLs to token lists.
 
 ### Example
 
 ```yaml
-using-tokens-from: https://tokens.coingecko.com/uniswap/all.json
+using-tokens-from:
+  - https://tokens.coingecko.com/uniswap/all.json
+  - https://tokens.coingecko.com/polygon-pos/all.json
+  - https://tokens.coingecko.com/arbitrum-one/all.json
 ```
 
 ## Deployers
