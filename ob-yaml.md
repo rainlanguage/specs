@@ -102,7 +102,7 @@ using-networks-from:
 
 ## Network Values
 
-The `network-values` section provides network-specific values that can be referenced in scenarios using template syntax. This allows strategies to share scenario definitions while using different network-specific addresses or configuration values.
+The `network-values` section provides network-specific values that can be referenced in scenarios (and in future potentially other parts of the yaml) using template syntax. This allows strategies to share scenario definitions while using different network-specific addresses or configuration values.
 
 Network values have no required structure - they are arbitrary key-value pairs that can be referenced via `${network-values.property}` syntax in scenario bindings.
 
