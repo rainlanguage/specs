@@ -132,6 +132,7 @@ Every orderbook is a contract deployed on some chain (has an address) with a sub
 
 Required fields:
   - `address`
+  - `deployment-block` (block number when the orderbook contract was deployed, used by indexers to determine the starting block for indexing)
 
 Optional fields:
   - `network` (foreign key into the known networks k/v, default is same as orderbook name)
@@ -142,16 +143,19 @@ Optional fields:
 orderbooks:
   polygon:
     address: 0x...
+    deployment-block: 12345678
 
   polygon-experimental:
     network: polygon
     address: 0x...
     subgraph: polygon2
     label: Polygon experimental
+    deployment-block: 12500000
 
   legacy:
     network: mainnet
     address: 0x...
+    deployment-block: 10000000
 ```
 
 ## Tokens
