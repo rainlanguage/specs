@@ -18,8 +18,6 @@ Local DB instances in the browser and periodically published SQLite dumps.
 ## Format overview
 
 - A single manifest covers every network that has a published dump.
-- Clients SHOULD treat unknown fields as opaque metadata for forward
-  compatibility.
 - The document MUST contain the fields described in this specification. Any
   additional fields remain implementation defined.
 
@@ -30,7 +28,7 @@ schema_version: 1
 networks:
   42161:
     dump_url: https://example.invalid/releases/download/sync-18345928447/42161.sql.gz
-    dump_timestamp: 2025-10-08T13:19:15.577198557+00:00
+    dump_timestamp: 1765337955
     seed_generation: 1
 ```
 
@@ -41,12 +39,14 @@ networks:
 - Monotonic: every published manifest MUST set a value greater than or equal to
   the previous manifest.
 - Purpose: signals breaking changes to the local database schema or other
-  conditions that require clients to discard all existing network data.
+  conditions that require clients to discard all existing indexed orderbook
+  event data stored in the local database for every network.
 - Client behaviour:
   - Clients MUST persist the last applied `schema_version`.
   - If the manifest reports a higher `schema_version` than stored locally, the
     client MUST drop every local network database, download the latest dump for
-    each network, and seed from scratch.
+    each network, and reinitialize those databases by applying the dump before
+    resuming incremental indexing.
   - After the global drop, clients only reseed networks present in
     `networks`; locally configured networks that are absent restart their
     incremental indexing flows without first applying a dump.
@@ -83,6 +83,8 @@ Each value under `networks` describes a single chain.
 
 - Monotonic per network: newer manifests MUST publish timestamps that strictly
   increase for a given chain ID.
+- Format: an integer Unix timestamp representing whole seconds since the Unix
+  epoch (`1970-01-01T00:00:00Z`); all values are in UTC.
 - Purpose: allows clients to decide whether their local incremental index is
   fresh enough to continue or whether they should reload the dump.
 - Client behaviour:
@@ -125,13 +127,14 @@ CREATE TABLE IF NOT EXISTS remote_seeds (
     chain_id INTEGER PRIMARY KEY,
     schema_version INTEGER NOT NULL,
     seed_generation INTEGER NOT NULL,
-    seed_timestamp TEXT NOT NULL,
+    seed_timestamp INTEGER NOT NULL,
     seed_url TEXT NOT NULL,
     seed_applied_at TIMESTAMP
 );
 ```
 
-- `seed_timestamp` stores the applied `dump_timestamp`.
+- `seed_timestamp` stores the applied `dump_timestamp` as UTC seconds since the
+  Unix epoch.
 - `seed_url` stores the applied `dump_url`.
 - `seed_applied_at` SHOULD be set to the local timestamp whenever a dump is
   successfully applied, even if the contents are identical to the previous dump.
