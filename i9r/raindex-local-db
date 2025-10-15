@@ -1,0 +1,648 @@
+# Raindex Event Sourcing Sync Specification V1
+
+## Overview
+
+A local-first, event-sourced system for synchronizing blockchain data into a local SQLite database. The system supports both direct RPC synchronization and bootstrapping from remote database dumps, enabling fast initial sync while maintaining eventual consistency with on-chain state.
+
+## Design Goals
+
+- **Local-first**: Primary data store is a local SQLite database shared across browser tabs
+- **Event-sourced**: Build application state from blockchain event logs
+- **Fast bootstrap**: Use remote dumps for initial sync, then sync in real-time
+- **Multi-network**: Support multiple networks and orderbooks simultaneously
+- **Independent sync**: Each orderbook syncs independently with its own state and error handling
+- **Query-while-sync**: Database remains queryable during synchronization
+- **Consistency**: Ensure complete, consistent state per block per orderbook
+
+## Architecture Components
+
+### 1. Local Client
+- SQLite database running in browser via WebAssembly
+- Synchronization engine that pulls logs from RPC
+- Query interface for application code
+- Merge logic for incorporating remote dumps
+
+### 2. Remote Server
+- SQLite database on disk
+- Same synchronization logic as local client
+- Periodic dump generation (every ~5 minutes)
+- HTTP endpoint for serving dumps
+
+### 3. Settings Configuration
+Extended `settings.yaml` schema to include sync configuration.
+
+## Settings YAML Extensions
+```yaml
+networks:
+  arbitrum:
+    rpcs:
+      - https://arbitrum-one-rpc.publicnode.com
+    chain-id: 42161
+    network-id: 42161
+    currency: ETH
+
+subgraphs:
+  arbitrum: https://api.goldsky.com/api/public/project_.../subgraphs/ob4-arbitrum-one/2025-07-01-8700/gn
+
+orderbooks:
+  arbitrum:
+    address: 0x2f209e5b67A33B8fE96E28f24628dF6Da301c8eB
+    deployment-block: 352866209
+    network: arbitrum  # optional - implied by key name matching 'arbitrum' network
+    subgraph: arbitrum # optional - implied by key name matching 'arbitrum' subgraph
+
+# New sync configuration sections
+
+# Remote sync servers - mapped to networks
+remotes:
+  arbitrum:
+    url: https://sync.raindex.io/arbitrum
+    network: arbitrum # optional - implied by key name matching 'arbitrum' network
+
+# RPC sync configuration per network
+sync:
+  arbitrum:
+    network: arbitrum # optional - implied by key name matching 'arbitrum' network
+    batch-size: 2000
+    max-concurrent-batches: 5
+    retry-attempts: 3
+    retry-delay-ms: 1000
+    rate-limit-delay-ms: 100
+    finality-depth: 64
+```
+
+## Database Schema
+
+The database consists of the following key table categories:
+
+1. **Sync State Tables**: Track synchronization progress per orderbook
+2. **Event Tables**: Raw logs and processed events (orders, trades, deposits, withdrawals)
+3. **State Tables**: Current state (vaults, vault balances)
+4. **Side Effect Tables**: Token info, interpreter bytecode, store Set events
+5. **Tracking Tables**: e.g. Which stores are being monitored per orderbook
+
+## Multi-Orderbook Coordination
+
+### Independent Sync
+
+Each orderbook syncs independently and maintains its own state:
+
+- **Separate sync_state**: Each orderbook has its own record tracking block number, block hash, and sync status
+- **Independent error handling**: One orderbook failing doesn't affect others
+- **Different sync speeds**: Networks with different block times sync at different rates
+- **Flexible configuration**: Each orderbook can use different remotes or sync purely from RPC
+- **Per-orderbook tracking**: Each orderbook tracks its own stores via tracked_stores table
+- **Concurrent syncing**: Multiple orderbooks can sync simultaneously
+
+**Benefits of independent sync:**
+- Add/remove orderbooks without affecting existing syncs
+- Each orderbook's data is always internally consistent
+- Different networks progress at their natural pace
+- Errors are isolated and don't cascade
+
+### Shared Side Effects
+
+While orderbooks sync independently, certain data is shared across all orderbooks:
+
+#### Token Info (token_info table)
+- **Scope**: One record per network:token (not per orderbook)
+- **Rationale**: Token metadata is network-level data, not orderbook-specific
+- **Benefit**: Fetching token info for one orderbook benefits all orderbooks on same network
+
+#### Interpreter Bytecode (interpreter_bytecode table)
+- **Scope**: One record per network:interpreter
+- **Rationale**: Bytecode is immutable and not orderbook-specific
+- **Benefit**: Multiple orderbooks can reference same interpreter without duplication
+
+#### Store Set Events (store_set_events table)
+- **Scope**: Filtered by orderbook context, but stores can be shared
+- **Rationale**: Stores are shared contracts that multiple orderbooks may use
+- **Benefit**: If multiple orderbooks use the same store, Set events are available to all
+
+**Implications of shared side effects:**
+- Side effect tables use INSERT OR IGNORE pattern during merge
+- Cannot simply delete and replace side effect data during remote merge
+- Store Set events must be carefully filtered by orderbook transaction context
+- Reduced redundancy in storage and RPC calls
+
+### Sync Coordination Example
+
+Consider a user with three orderbooks configured:
+```yaml
+orderbooks:
+  mainnet-ob-1:
+    network: mainnet
+    address: 0xAAA...
+    deployment-block: 18000000
+    
+  mainnet-ob-2:
+    network: mainnet
+    address: 0xBBB...
+    deployment-block: 19000000
+    
+  base-ob:
+    network: base
+    address: 0xCCC...
+    deployment-block: 5000000
+```
+
+**Sync behavior:**
+- `mainnet-ob-1` and `mainnet-ob-2` sync independently on mainnet
+- `base-ob` syncs independently on base
+- All three can be at different block heights
+- All mainnet orderbooks share token_info for mainnet tokens
+- Each orderbook has its own sync_state, error state, and tracked_stores
+- If `mainnet-ob-1` encounters an error, `mainnet-ob-2` and `base-ob` continue normally
+
+## Synchronization Flow
+
+### Initial Sync Decision
+
+When the client starts, it evaluates each orderbook independently:
+
+1. Check `sync_state` table for each configured orderbook
+2. For each orderbook without sync state OR with `last_synced_block < (current_block - threshold)`:
+   - Check if a compatible remote exists in settings
+   - If remote exists: **Bootstrap from remote**
+   - If no remote: **Sync from RPC**
+3. For orderbooks with recent sync state: **Continue RPC sync**
+
+**Threshold suggestion**: If more than 10,000 blocks behind, use remote bootstrap.
+
+### RPC Synchronization
+
+Each orderbook runs this process independently:
+```
+For each orderbook:
+  1. Get deployment_block from settings
+  2. Get last_synced_block from sync_state (or use deployment_block - 1)
+  3. Get current_block from RPC
+  4. Apply finality_depth: sync_target = current_block - finality_depth
+  5. Calculate batches: [(last_synced_block + 1)..sync_target] in batch_size chunks
+  
+  6. For each batch (with max_concurrent_batches parallelism):
+     a. REORG CHECK: Fetch block_hash for last_synced_block from RPC
+        - Compare with last_synced_block_hash in sync_state
+        - If hashes don't match: REORG DETECTED → execute reorg recovery
+     
+     b. Fetch logs via eth_getLogs filtered by orderbook address
+     
+     c. Fetch block data for each unique block in the batch
+     
+     d. BEGIN TRANSACTION
+     
+     e. Insert raw logs into raw_logs table
+     
+     f. Extract transaction hashes from raw_logs
+     
+     g. Parse AddOrder logs to identify new store addresses
+        - For each new store: insert into tracked_stores with first_seen_block
+     
+     h. Fetch Store Set events:
+        - Query tracked_stores for this orderbook to get all store addresses
+        - For each tracked store:
+          * Fetch Set events via eth_getLogs for batch block range
+          * Filter Set events to only those in orderbook transaction hashes
+          * Insert Set event raw_logs and store_set_events records
+     
+     i. Process all event logs (call handlers in order):
+        - AddOrder: insert orders, trigger interpreter bytecode fetch
+        - RemoveOrder: update orders
+        - Deposit: insert vault_balance_changes, update vaults, trigger token info fetch
+        - Withdraw: insert vault_balance_changes, update vaults
+        - TakeOrder: insert trades, vault_balance_changes, update vaults
+        - Clear: insert trades (2x), vault_balance_changes (4x), update vaults
+     
+     j. Perform side effects:
+        - Token info: fetch name/symbol/decimals for new tokens (non-blocking)
+        - Interpreter bytecode: fetch bytecode for new interpreters (blocking)
+     
+     k. Update sync_state with batch end block number AND block hash
+     
+     l. COMMIT TRANSACTION
+     
+  7. On batch failure:
+     a. ROLLBACK TRANSACTION
+     b. Increment retry counter
+     c. Apply exponential backoff
+     d. Retry batch (up to retry-attempts)
+     e. If all retries fail: mark sync_error in sync_state and abort
+```
+
+**Key aspects of sync strategy:**
+
+1. **Store Set Events Processing**: Set events are fetched AFTER raw logs are inserted but BEFORE other event handlers run. This ensures Set events are available when handlers need them. The processing order is critical:
+   - Insert orderbook raw_logs first
+   - Extract tx_hashes to identify relevant transactions
+   - Find new stores from AddOrder logs
+   - Fetch and insert Set events filtered by orderbook context
+   - Process all other events
+
+2. **Transaction Boundaries**: Every batch is atomic. All operations (raw logs, Set events, event processing, side effects, sync_state update) happen within a single transaction. If any step fails, the entire batch rolls back and the orderbook remains at the previous consistent state.
+
+3. **Finality Depth**: Syncing stops at `current_block - finality_depth` to reduce reorg probability. This configurable depth depends on the network's consensus mechanism and typical reorg patterns.
+
+### Reorg Recovery
+
+When a reorg is detected during sync:
+```
+On reorg detection:
+
+1. Determine reorg depth:
+   - Walk backwards from last_synced_block
+   - For each block, fetch block_hash from RPC
+   - Compare with stored block_hash in raw_logs
+   - Stop when hashes match (found common ancestor)
+   
+2. Rollback to common ancestor:
+   - BEGIN TRANSACTION
+   
+   - Delete all records where block_number > common_ancestor_block:
+     * raw_logs
+     * orders (with removed_block > common_ancestor OR added_block > common_ancestor)
+     * vault_balance_changes
+     * trades
+     * store_set_events
+   
+   - Recalculate vault balances:
+     * Delete vault records updated after common_ancestor
+     * Rebuild from vault_balance_changes up to common_ancestor
+   
+   - Update sync_state:
+     * Set last_synced_block = common_ancestor_block
+     * Set last_synced_block_hash = common_ancestor_hash
+   
+   - COMMIT TRANSACTION
+   
+3. Resume normal sync from common_ancestor_block + 1
+
+Note: Side effect tables (token_info, interpreter_bytecode) are NOT rolled back
+as they represent immutable on-chain data. tracked_stores is also not rolled back
+as stores remain relevant even after a reorg.
+```
+
+**Reorg implications:**
+- Reorgs only affect the specific orderbook being synced
+- Other orderbooks continue syncing normally
+- Deep reorgs may trigger multiple detection-recovery cycles
+- Finality depth configuration minimizes reorg frequency
+
+### Log Processing Handlers
+
+Each event type has a handler function:
+
+#### AddOrder Handler
+- Decode log data to extract order fields (including store_address)
+- Check if order already exists (idempotency)
+- Insert order record with is_live=1
+- Check if this is a new store_address for this orderbook
+- If new store: insert into tracked_stores with first_seen_block
+- Trigger interpreter bytecode side effect if needed
+
+#### RemoveOrder Handler
+- Decode log to get order_hash
+- Update order record: set is_live=0, removed_block, removed_timestamp
+
+#### Deposit Handler
+- Decode log to extract owner, token, vault_id, amount
+- Insert vault_balance_changes record (change_type='deposit')
+- Update or insert vault record with new balance
+- Trigger token info side effect if needed
+
+#### Withdraw Handler
+- Decode log to extract owner, token, vault_id, amount
+- Insert vault_balance_changes record (change_type='withdraw')
+- Update vault record with new balance
+
+#### TakeOrder Handler
+- Decode log to extract trade details
+- Insert trade record
+- Insert vault_balance_changes for both input and output (change_type='trade')
+- Update vault records for both parties
+- Trigger token info side effects for both tokens if needed
+
+#### Clear Handler
+- Decode log to extract both orders and amounts
+- Insert 2 trade records (one per order)
+- Insert 4 vault_balance_changes (input/output for each order, change_type='trade')
+- Update 4 vault records
+- Trigger token info side effects if needed
+
+### Side Effect Processing
+
+#### Token Info Fetching
+When a new token address is encountered in any event:
+- Check if token_info exists for network:address
+- If not exists or fetch_succeeded=0:
+  - Mark fetch_attempted=1, last_fetch_attempt=now
+  - Call eth_call for name(), symbol(), decimals()
+  - If success: store results, fetch_succeeded=1
+  - If failure: store error, fetch_succeeded=0
+  - Insert/update token_info record
+
+Note: Failed fetches can be retried in background (non-blocking)
+
+#### Interpreter Bytecode Fetching
+When a new interpreter address appears in AddOrder event:
+- Check if interpreter_bytecode exists for network:address
+- If not exists:
+  - Call eth_getCode for interpreter address
+  - Calculate keccak256 hash of bytecode
+  - Insert interpreter_bytecode record (critical failure if this fails)
+
+## Remote Bootstrap
+
+### Remote Discovery
+
+When local client determines it needs to bootstrap from remote:
+```
+1. Fetch remote metadata: GET {remote_url}/metadata
+   Response: {
+     schema_version: 1,
+     orderbooks: [
+       {
+         network: "mainnet",
+         address: "0x...",
+         last_block: 18500000,
+         block_hash: "0xabcd...",
+         timestamp: 1704067200
+       }
+     ]
+   }
+
+2. Validate schema_version matches local
+
+3. For each configured orderbook that exists in remote:
+   a. Compare remote's last_block and block_hash with local sync_state
+   b. If remote is ahead OR block_hashes differ at same height:
+      - Fetch dump: GET {remote_url}/dump/{network}/{orderbook}
+   c. Otherwise skip (local is current)
+```
+
+### Merge Policy
+
+The merge policy determines how remote dump data is integrated into the local database.
+
+#### Policy Overview
+- **Replace on remote ahead**: If remote is further synced, replace local data
+- **Replace on hash mismatch**: If block numbers match but hashes differ (reorg), trust remote
+- **Preserve side effects**: Never overwrite existing side effect data
+- **Atomic operation**: All merges happen within a transaction
+
+#### Transaction Boundaries
+
+Remote dump merges are atomic operations:
+```
+BEGIN TRANSACTION
+  - Validate schema version compatibility
+  - For each orderbook-specific table: delete and replace if criteria met
+  - For each side effect table: insert new records only (preserve existing)
+  - Update sync_state with remote's block number and hash
+COMMIT TRANSACTION
+```
+
+If any step fails during merge, the entire transaction rolls back and the local database remains in its previous consistent state.
+
+#### Detailed Merge Rules
+
+**For orderbook-specific tables** (orders, trades, vaults, vault_balance_changes, raw_logs, tracked_stores, store_set_events):
+```
+IF remote.last_synced_block > local.last_synced_block 
+   OR (remote.last_synced_block == local.last_synced_block 
+       AND remote.block_hash != local.block_hash):
+  
+  DELETE FROM <table> WHERE network = ? AND orderbook_address = ?
+  INSERT all records from dump
+  
+ELSE:
+  Skip (local is current or ahead)
+```
+
+**For side effect tables** (token_info, interpreter_bytecode):
+```
+For each record in dump:
+  IF NOT EXISTS (SELECT 1 FROM <table> WHERE id = dump_record.id):
+    INSERT dump_record
+  ELSE:
+    SKIP (preserve existing local data)
+```
+
+**For sync_state table**:
+```
+IF merging dump data:
+  UPDATE sync_state SET
+    last_synced_block = remote.last_synced_block,
+    last_synced_block_hash = remote.block_hash,
+    last_synced_timestamp = remote.timestamp
+  WHERE network = ? AND orderbook_address = ?
+```
+
+#### Hash Mismatch Scenario
+
+When `remote.last_synced_block == local.last_synced_block` but `remote.block_hash != local.block_hash`:
+
+This indicates one of two scenarios:
+1. **Local experienced a reorg that remote hasn't**: Local is on forked chain
+2. **Remote experienced a reorg that local hasn't**: Remote is on forked chain
+
+**Resolution**: Trust the remote dump. Rationale:
+- Remote servers typically have better infrastructure and connectivity
+- Remote servers are more likely to be on the canonical chain
+- Local can detect its own reorgs via block hash checks during sync
+- If remote is wrong, local will detect mismatch on next RPC sync and self-correct
+```
+Action when hash mismatch detected:
+1. Log warning about potential reorg
+2. Replace local data with remote dump (per merge policy)
+3. Resume RPC sync from remote's last_synced_block
+4. RPC sync will validate chain continuity and detect if remote was on wrong fork
+```
+
+### Dump Generation (Remote)
+
+Remote servers generate dumps periodically:
+```
+Every ~5 minutes:
+
+1. For each orderbook:
+   a. Query sync_state to get last_synced_block and block_hash
+   
+   b. Create dump of all tables filtered by network:orderbook:
+      - sync_state (for this orderbook)
+      - raw_logs (for this orderbook)
+      - orders (for this orderbook)
+      - trades (for this orderbook)
+      - vaults (for this orderbook)
+      - vault_balance_changes (for this orderbook)
+      - tracked_stores (for this orderbook)
+      - store_set_events (for this orderbook)
+   
+   c. Include side effect tables (full tables, not filtered):
+      - token_info (all networks)
+      - interpreter_bytecode (all networks)
+   
+   d. Compress dump (gzip)
+   
+   e. Write to disk: {network}_{orderbook}_{timestamp}.db.gz
+   
+   f. Update metadata.json with new dump info including block_hash
+   
+2. Clean up old dumps (keep last N dumps per orderbook)
+```
+
+## Error Handling
+
+### RPC Failures
+```
+On RPC call failure:
+  1. Log error details
+  2. Try next RPC in rpcs list
+  3. If all RPCs fail:
+     a. Apply exponential backoff
+     b. Retry entire batch
+     c. After max retries: mark sync_error in sync_state
+```
+
+### Log Processing Failures
+```
+On handler error (e.g., malformed log):
+  1. Rollback transaction
+  2. Mark sync_error in sync_state with details
+  3. Halt sync for this orderbook
+  4. Expose error to monitoring
+  
+This is a critical failure - we cannot have partial block state.
+```
+
+### Side Effect Failures
+```
+Token Info Fetch Failure:
+  - Mark fetch_attempted=1, fetch_succeeded=0, store error
+  - Continue processing (non-blocking)
+  - Background retry mechanism attempts refetch periodically
+
+Interpreter Bytecode Fetch Failure:
+  - Critical failure: cannot process order without bytecode
+  - Rollback transaction, mark sync_error
+  
+Store Set Events Fetch Failure:
+  - Critical failure: cannot have accurate store state
+  - Rollback transaction, mark sync_error
+```
+
+## Querying During Sync
+
+### Sync State Visibility
+
+Every query should be aware of sync state:
+```typescript
+interface QueryContext {
+  network: string;
+  orderbook: string;
+  syncedUpToBlock: number;
+  isSyncing: boolean;
+  syncError?: string;
+}
+
+// Client provides this with every query result
+getSyncContext(network: string, orderbook: string): QueryContext
+```
+
+### Safe Querying
+
+Queries MUST filter by `block_number <= last_synced_block` to ensure they never see partial state.
+
+Example:
+```sql
+SELECT * FROM orders 
+WHERE network = ? 
+  AND orderbook_address = ?
+  AND added_block <= (
+    SELECT last_synced_block 
+    FROM sync_state 
+    WHERE network = ? AND orderbook_address = ?
+  )
+```
+
+## Monitoring & Observability
+
+### Metrics to Expose
+```typescript
+interface SyncMetrics {
+  // Per orderbook
+  lastSyncedBlock: number;
+  lastSyncedBlockHash: string;
+  currentBlock: number;
+  blocksBehind: number;
+  isSyncing: boolean;
+  syncError?: string;
+  
+  // Performance
+  blocksPerSecond: number;
+  logsPerSecond: number;
+  avgBatchTimeMs: number;
+  
+  // RPC health
+  activeRpcUrl: string;
+  rpcFailureCount: number;
+  lastRpcError?: string;
+  
+  // Side effects
+  pendingTokenFetches: number;
+  failedTokenFetches: number;
+  trackedStoresCount: number;
+}
+```
+
+### Progress Events
+```typescript
+interface SyncProgressEvent {
+  type: 'batch_complete' | 'batch_failed' | 'reorg_detected' | 'sync_complete' | 'side_effect_failed' | 'new_store_tracked' | 'remote_merge_complete';
+  network: string;
+  orderbook: string;
+  fromBlock: number;
+  toBlock: number;
+  blockHash?: string;
+  details?: any;
+}
+
+// Client emits these events for UI consumption
+onSyncProgress(callback: (event: SyncProgressEvent) => void)
+```
+
+## Remote Server API
+
+### GET /metadata
+
+Returns metadata about available dumps.
+```json
+{
+  "schema_version": 1,
+  "dumps": [
+    {
+      "network": "mainnet",
+      "orderbook": "0x1234...",
+      "last_block": 18500000,
+      "block_hash": "0xabcd...",
+      "timestamp": 1704067200,
+      "size_bytes": 52428800,
+      "url": "/dump/mainnet/0x1234..."
+    }
+  ]
+}
+```
+
+### GET /dump/{network}/{orderbook}
+
+Returns compressed SQLite dump.
+
+Response:
+- Content-Type: application/gzip
+- Body: gzipped SQLite database file
+
+The dump includes:
+- All tables for the specified network:orderbook
+- Complete side effect tables (token_info, interpreter_bytecode)
+- tracked_stores filtered by network:orderbook
+- store_set_events filtered by network:orderbook
+- Schema version metadata
