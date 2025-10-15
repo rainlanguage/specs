@@ -64,7 +64,7 @@ The client will persist the latest version for each network in the local db so i
 1. Download local db manifest
 2. Compare manifest schema version with our hardcoded sdk schema version.
    - If they match, continue.
-   - If they don't match, stop the sync process as the table schema version is incompatible. Drop and re-initialize every local db orderbook data including local-only orderbooks. This yields a clean slate, so re-run logic from steps 4–5 is unnecessary; continue with step 6.
+   - If they don't match, stop the sync process as the table schema version is incompatible. Drop and re-initialize every local db orderbook data including local-only orderbooks. Continue with step 5.
 3. Compare matching schema version with locally saved schema version in local db.
    - If they match, continue.
    - If they don't match, this means the local db is outdated and needs to be reset. Drop and re-initialize every dump-backed orderbook with the latest schema and data pulled from the published dumps. Orderbooks that do not have a corresponding dump (local-only orderbooks) retain their existing indexed data because it already passed the schema-version compatibility check; they pick up incremental indexing from their stored state. This yields a clean slate for dump-backed markets, so re-run logic from steps 4–5 is unnecessary; continue with step 6.
