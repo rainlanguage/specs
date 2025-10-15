@@ -64,10 +64,10 @@ The client will persist the latest version for each network in the local db so i
 1. Download local db manifest
 2. Compare manifest schema version with our hardcoded sdk schema version.
    - If they match, continue.
-   - If they don't match, drop and re-initialize every local db orderbook data including local-only orderbooks. Continue with step 5.
+   - If they don't match, drop and re-initialize every local db orderbook data including local-only orderbooks. Skip remote dumps and continue with incremental indexing in step 6.
 3. Compare matching schema version with locally saved schema version in local db.
    - If they match, continue.
-   - If they don't match, this means the incoming data is not compatible with locally saved data. Manifest version must be up to date with the sdk version. Continue normally processing the locally saved data using incremental indexing with step 6.
+   - If they don't match, this means the incoming data is not compatible with locally saved data. Manifest is outdated at this point. Continue normally processing the locally saved data using incremental indexing with step 6.
 4. For the networks that are saved locally in local db, check the sdk network entry information for each network.
    - If there is a match with the version, continue.
    - If there isn't a match, use the block number specified to reset locally saved data for that network. Update last indexed block to be the same as network entry information's `block_height` (the indexer will resume at `block_height + 1` because the `block_height` data itself was preserved). Continue with step 6.
