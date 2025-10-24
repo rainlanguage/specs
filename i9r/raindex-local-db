@@ -55,12 +55,12 @@ orderbooks:
 # New sync configuration sections
 
 # Remote sync servers - mapped to networks
-remotes:
+local-db-remotes:
   arbitrum:
     url: https://sync.raindex.io/arbitrum
 
 # Global RPC sync configuration - applies to all networks and all RPCs
-local-sync:
+local-db-sync:
     batch-size: 2000
     max-concurrent-batches: 5
     retry-attempts: 3
@@ -132,12 +132,12 @@ orderbooks:
     network: mainnet
     address: 0xAAA...
     deployment-block: 18000000
-    
+
   mainnet-ob-2:
     network: mainnet
     address: 0xBBB...
     deployment-block: 19000000
-    
+
   base-ob:
     network: base
     address: 0xCCC...
@@ -177,32 +177,32 @@ For each orderbook:
   3. Get current_block from RPC
   4. Apply finality_depth: sync_target = current_block - finality_depth
   5. Calculate batches: [(last_synced_block + 1)..sync_target] in batch_size chunks
-  
+
   6. For each batch (with max_concurrent_batches parallelism):
      a. REORG CHECK: Fetch block_hash for last_synced_block from RPC
         - Compare with last_synced_block_hash in sync_state
         - If hashes don't match: REORG DETECTED → execute reorg recovery
-     
+
      b. Fetch logs via eth_getLogs filtered by orderbook address
-     
+
      c. Fetch block data for each unique block in the batch
-     
+
      d. BEGIN TRANSACTION
-     
+
      e. Insert raw logs into raw_logs table
-     
+
      f. Extract transaction hashes from raw_logs
-     
+
      g. Parse AddOrder logs to identify new store addresses
         - For each new store: insert into tracked_stores with first_seen_block
-     
+
      h. Fetch Store Set events:
         - Query tracked_stores for this orderbook to get all store addresses
         - For each tracked store:
           * Fetch Set events via eth_getLogs for batch block range
           * Filter Set events to only those in orderbook transaction hashes
           * Insert Set event raw_logs and store_set_events records
-     
+
      i. Process all event logs (call handlers in order):
         - AddOrder: insert orders, trigger interpreter bytecode fetch
         - RemoveOrder: update orders
@@ -210,15 +210,15 @@ For each orderbook:
         - Withdraw: insert vault_balance_changes, update vaults
         - TakeOrder: insert trades, vault_balance_changes, update vaults
         - Clear: insert trades (2x), vault_balance_changes (4x), update vaults
-     
+
      j. Perform side effects:
         - Token info: fetch name/symbol/decimals for new tokens (non-blocking)
         - Interpreter bytecode: fetch bytecode for new interpreters (blocking)
-     
+
      k. Update sync_state with batch end block number AND block hash
-     
+
      l. COMMIT TRANSACTION
-     
+
   7. On batch failure:
      a. ROLLBACK TRANSACTION
      b. Increment retry counter
@@ -251,27 +251,27 @@ On reorg detection:
    - For each block, fetch block_hash from RPC
    - Compare with stored block_hash in raw_logs
    - Stop when hashes match (found common ancestor)
-   
+
 2. Rollback to common ancestor:
    - BEGIN TRANSACTION
-   
+
    - Delete all records where block_number > common_ancestor_block:
      * raw_logs
      * orders (with removed_block > common_ancestor OR added_block > common_ancestor)
      * vault_balance_changes
      * trades
      * store_set_events
-   
+
    - Recalculate vault balances:
      * Delete vault records updated after common_ancestor
      * Rebuild from vault_balance_changes up to common_ancestor
-   
+
    - Update sync_state:
      * Set last_synced_block = common_ancestor_block
      * Set last_synced_block_hash = common_ancestor_hash
-   
+
    - COMMIT TRANSACTION
-   
+
 3. Resume normal sync from common_ancestor_block + 1
 
 Note: Side effect tables (token_info, interpreter_bytecode) are NOT rolled back
@@ -405,13 +405,13 @@ If any step fails during merge, the entire transaction rolls back and the local 
 
 **For orderbook-specific tables** (orders, trades, vaults, vault_balance_changes, raw_logs, tracked_stores, store_set_events):
 ```
-IF remote.last_synced_block > local.last_synced_block 
-   OR (remote.last_synced_block == local.last_synced_block 
+IF remote.last_synced_block > local.last_synced_block
+   OR (remote.last_synced_block == local.last_synced_block
        AND remote.block_hash != local.block_hash):
-  
+
   DELETE FROM <table> WHERE network = ? AND orderbook_address = ?
   INSERT all records from dump
-  
+
 ELSE:
   Skip (local is current or ahead)
 ```
@@ -464,7 +464,7 @@ Every ~5 minutes:
 
 1. For each orderbook:
    a. Query sync_state to get last_synced_block and block_hash
-   
+
    b. Create dump of all tables filtered by network:orderbook:
       - sync_state (for this orderbook)
       - raw_logs (for this orderbook)
@@ -474,17 +474,17 @@ Every ~5 minutes:
       - vault_balance_changes (for this orderbook)
       - tracked_stores (for this orderbook)
       - store_set_events (for this orderbook)
-   
+
    c. Include side effect tables (full tables, not filtered):
       - token_info (all networks)
       - interpreter_bytecode (all networks)
-   
+
    d. Compress dump (gzip)
-   
+
    e. Write to disk: {network}_{orderbook}_{timestamp}.db.gz
-   
+
    f. Update metadata.json with new dump info including block_hash
-   
+
 2. Clean up old dumps (keep last N dumps per orderbook)
 ```
 
@@ -508,7 +508,7 @@ On handler error (e.g., malformed log):
   2. Mark sync_error in sync_state with details
   3. Halt sync for this orderbook
   4. Expose error to monitoring
-  
+
 This is a critical failure - we cannot have partial block state.
 ```
 
@@ -522,7 +522,7 @@ Token Info Fetch Failure:
 Interpreter Bytecode Fetch Failure:
   - Critical failure: cannot process order without bytecode
   - Rollback transaction, mark sync_error
-  
+
 Store Set Events Fetch Failure:
   - Critical failure: cannot have accurate store state
   - Rollback transaction, mark sync_error
@@ -552,12 +552,12 @@ Queries MUST filter by `block_number <= last_synced_block` to ensure they never 
 
 Example:
 ```sql
-SELECT * FROM orders 
-WHERE network = ? 
+SELECT * FROM orders
+WHERE network = ?
   AND orderbook_address = ?
   AND added_block <= (
-    SELECT last_synced_block 
-    FROM sync_state 
+    SELECT last_synced_block
+    FROM sync_state
     WHERE network = ? AND orderbook_address = ?
   )
 ```
@@ -574,17 +574,17 @@ interface SyncMetrics {
   blocksBehind: number;
   isSyncing: boolean;
   syncError?: string;
-  
+
   // Performance
   blocksPerSecond: number;
   logsPerSecond: number;
   avgBatchTimeMs: number;
-  
+
   // RPC health
   activeRpcUrl: string;
   rpcFailureCount: number;
   lastRpcError?: string;
-  
+
   // Side effects
   pendingTokenFetches: number;
   failedTokenFetches: number;
