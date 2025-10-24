@@ -50,6 +50,7 @@ orderbooks:
     deployment-block: 352866209
     network: arbitrum  # optional - implied by key name matching 'arbitrum' network
     subgraph: arbitrum # optional - implied by key name matching 'arbitrum' subgraph
+    remote: arbitrum # optional - implied by key name matching 'arbitrum' remote
 
 # New sync configuration sections
 
@@ -57,12 +58,9 @@ orderbooks:
 remotes:
   arbitrum:
     url: https://sync.raindex.io/arbitrum
-    network: arbitrum # optional - implied by key name matching 'arbitrum' network
 
-# RPC sync configuration per network
-sync:
-  arbitrum:
-    network: arbitrum # optional - implied by key name matching 'arbitrum' network
+# Global RPC sync configuration - applies to all networks and all RPCs
+local-sync:
     batch-size: 2000
     max-concurrent-batches: 5
     retry-attempts: 3
@@ -162,7 +160,7 @@ When the client starts, it evaluates each orderbook independently:
 
 1. Check `sync_state` table for each configured orderbook
 2. For each orderbook without sync state OR with `last_synced_block < (current_block - threshold)`:
-   - Check if a compatible remote exists in settings
+   - Check if a compatible remote exists in settings, by following the `remote` key for that orderbook.
    - If remote exists: **Bootstrap from remote**
    - If no remote: **Sync from RPC**
 3. For orderbooks with recent sync state: **Continue RPC sync**
