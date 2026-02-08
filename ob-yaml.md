@@ -180,6 +180,7 @@ Optional fields:
 - `decimals` (fetch from contract)
 - `label` (fetch from contract, called `name` in the erc20 interface)
 - `symbol` (fetch from contract)
+- `logo-uri` (fetch from token list)
 
 ```
 tokens:
@@ -189,6 +190,7 @@ tokens:
     decimals: 8
     label: USD Coin
     symbol: USDC
+    logo-uri: https://example.com/usdc-logo.png
   eth-dai:
     network: mainnet
     address: 0x6b175474e89094c44da98b954eedeac495271d0f
