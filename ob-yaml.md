@@ -284,9 +284,9 @@ Optional fields:
 
 ### Oracle URL
 
-Orders that require external data (e.g. price feeds) at take-time can specify an `oracle-url`. This URL points to a server that returns `SignedContextV1` data, which takers fetch and include when taking the order.
+Orders that require external data (e.g. price feeds) can specify an `oracle-url`. This URL points to a server that returns `SignedContextV1` data. The signed context is provided by the caller when taking or clearing the order — the order's rainlang can then read this data from the signed context columns during evaluation.
 
-When `oracle-url` is specified, the tooling encodes a `SignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered onchain by takers and indexers.
+When `oracle-url` is specified, the tooling encodes a `SignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered onchain by anyone who needs to take or clear the order (e.g. Raindex bots, the webapp, or other takers).
 
 The oracle server MUST respond to `GET` requests and return a JSON object matching the `SignedContextV1` struct:
 
