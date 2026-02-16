@@ -280,6 +280,23 @@ Required fields:
 Optional fields:
 - `deployer` (defaults to network deployer if unambiguous, otherwise required)
 - `orderbook` (defaults to network orderbook if unambiguous, otherwise required)
+- `oracle-url` (URL of a signed context oracle server, see below)
+
+### Oracle URL
+
+Orders that require external data (e.g. price feeds) at take-time can specify an `oracle-url`. This URL points to a server that returns `SignedContextV1` data, which takers fetch and include when taking the order.
+
+When `oracle-url` is specified, the tooling encodes a `SignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered onchain by takers and indexers.
+
+The oracle server MUST respond to `GET` requests and return a JSON object matching the `SignedContextV1` struct:
+
+```json
+{
+  "signer": "0x...",
+  "context": ["0x...", "0x..."],
+  "signature": "0x..."
+}
+```
 
 ```
 orders:
@@ -307,6 +324,14 @@ orders:
         vault-id: 99
       - token: polygon-usdt
         vault-id: 0xabcd
+  oracle-order:
+    oracle-url: https://my-oracle-server.example.com/context
+    inputs:
+      - token: eth-weth
+        vault-id: 1
+    outputs:
+      - token: eth-usdc
+        vault-id: 1
 ```
 
 ### front matter scenarios
