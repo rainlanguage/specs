@@ -84,6 +84,8 @@ Values in the `context` array SHOULD be encoded as Rain DecimalFloats where they
 
 **Error (4xx/5xx)**
 
+Content-Type: `application/json`
+
 ```json
 {
   "error": "<error_code>",
@@ -97,7 +99,10 @@ The signature MUST be an EIP-191 "personal sign" signature:
 
 1. Concatenate the context values: `packed = abi.encodePacked(context[0], context[1], ..., context[n])`
 2. Hash: `hash = keccak256(packed)`
-3. Sign with EIP-191: `sign("\x19Ethereum Signed Message:\n32" ++ hash)`
+3. Apply the EIP-191 prefix: `eth_hash = keccak256("\x19Ethereum Signed Message:\n32" ++ hash)` (this is `toEthSignedMessageHash(hash)`)
+4. Sign: `(r, s, v) = ECDSA.sign(eth_hash)`
+
+Most Web3 libraries handle steps 3-4 automatically via `personal_sign(hash)` or `sign_message(hash)`.
 
 This matches how the Rain orderbook contract verifies signatures via `LibContext.build`, which uses OpenZeppelin's `ECDSA.recover` with `toEthSignedMessageHash`.
 
