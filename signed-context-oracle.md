@@ -20,11 +20,13 @@ There is no `GET` fallback. The request body is always required.
 
 **Content-Type:** `application/octet-stream`
 
-**Body:** Raw ABI-encoded bytes of the following tuple:
+**Body:** Raw ABI-encoded bytes of an array of tuples:
 
 ```solidity
-abi.encode(OrderV4 order, uint256 inputIOIndex, uint256 outputIOIndex, address counterparty)
+abi.encode((OrderV4 order, uint256 inputIOIndex, uint256 outputIOIndex, address counterparty)[])
 ```
+
+Each tuple contains:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -32,6 +34,8 @@ abi.encode(OrderV4 order, uint256 inputIOIndex, uint256 outputIOIndex, address c
 | `inputIOIndex` | `uint256` | Index into `order.validInputs[]` for the current IO pair |
 | `outputIOIndex` | `uint256` | Index into `order.validOutputs[]` for the current IO pair |
 | `counterparty` | `address` | The address of the taker or clearer |
+
+A single request is simply an array of length 1.
 
 ABI encoding is used because it is canonical — there are no JSON key ordering ambiguities, and `OrderV4` contains nested arrays and bytes fields that are complex to serialize in other formats.
 
@@ -67,12 +71,18 @@ These are the canonical Rain orderbook types. Implementations SHOULD use generat
 Content-Type: `application/json`
 
 ```json
-{
-  "signer": "0x<20-byte address>",
-  "context": ["0x<32-byte hex>", "0x<32-byte hex>", ...],
-  "signature": "0x<65-byte hex>"
-}
+[
+  {
+    "signer": "0x<20-byte address>",
+    "context": ["0x<32-byte hex>", "0x<32-byte hex>", ...],
+    "signature": "0x<65-byte hex>"
+  }
+]
 ```
+
+The response is an array of signed context objects. The array length MUST match the request array length and be in the same order.
+
+Each object contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -95,7 +105,7 @@ Content-Type: `application/json`
 
 ### Signing
 
-The signature MUST be an EIP-191 "personal sign" signature:
+Each signature MUST be an EIP-191 "personal sign" signature over its corresponding context array:
 
 1. Concatenate the context values: `packed = abi.encodePacked(context[0], context[1], ..., context[n])`
 2. Hash: `hash = keccak256(packed)`
