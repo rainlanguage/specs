@@ -284,19 +284,11 @@ Optional fields:
 
 ### Oracle URL
 
-Orders that require external data (e.g. price feeds) can specify an `oracle-url`. This URL points to a server that returns `SignedContextV1` data. The signed context is provided by the caller when taking or clearing the order — the order's rainlang can then read this data from the signed context columns during evaluation.
+Orders that require external data (e.g. price feeds) can specify an `oracle-url`. This URL points to a server implementing the [Signed Context Oracle protocol](./signed-context-oracle.md). The signed context is provided by the caller when taking or clearing the order — the order's Rainlang expression can then read this data from the signed context columns during evaluation.
 
-When `oracle-url` is specified, the tooling encodes a `SignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered onchain by anyone who needs to take or clear the order (e.g. Raindex bots, the webapp, or other takers).
+When `oracle-url` is specified, the tooling encodes a `RaindexSignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered on-chain by anyone who needs to take or clear the order (e.g. Raindex bots, the webapp, or other takers).
 
-The oracle server MUST respond to `GET` requests and return a JSON object matching the `SignedContextV1` struct:
-
-```json
-{
-  "signer": "0x...",
-  "context": ["0x...", "0x..."],
-  "signature": "0x..."
-}
-```
+See the [Signed Context Oracle spec](./signed-context-oracle.md) for full protocol details including the POST request format, response schema, signing requirements, and security considerations.
 
 ```
 orders:
