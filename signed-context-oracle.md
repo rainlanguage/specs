@@ -1,53 +1,41 @@
 # Signed Context Oracle Spec
 
-This spec defines the protocol for a **signed context oracle server** compatible with Rain orderbook. Any server implementing this protocol can serve as a price oracle (or any external data source) for Raindex orders.
+## Motivation
 
-## Overview
+Onchain orders often need external data — prices, trading signals, portfolio weights, or anything else that cannot be found onchain. Push oracles (e.g. Chainlink) solve this for prices but are expensive in gas and limited to data that feed operators choose to publish. Pull oracles allow order owners to specify arbitrary data sources, including data they may want to keep offchain until execution time (e.g. proprietary trading signals).
 
-A signed context oracle server provides signed data that is passed into `takeOrders4()` or `clear2()` as a `SignedContextV1` struct. The orderbook contract verifies the EIP-191 signature on-chain using OpenZeppelin's `SignatureChecker`, then makes the signed data available to the order's Rainlang expression via the signed context columns.
+This spec defines a standard protocol for **signed context oracle servers** that serve data to Rain orderbook orders. The key benefit is the **separation of order placer and solver/taker**: an order owner deploys an order referencing an oracle URL, and any taker or solver has a standard way to discover that URL, fetch the required data, and pass it into the order at execution time. Without this standard, takers would need out-of-band coordination with each order owner to know where to get the data and how to format it.
 
-```
-External Data Source → Oracle Server → SignedContextV1 JSON
-                                              ↓
-Client (bot/webapp) → POST request → receives signed context
-                                              ↓
-Orderbook Contract → verifies EIP-191 signature → Rainlang evaluation
-```
+## Protocol
 
-## Endpoint
+### Endpoint
 
-The oracle server MUST expose a single `POST` endpoint. The URL of this endpoint is the `oracle-url` referenced in [ob-yaml orders](./ob-yaml.md).
+The oracle server MUST expose a `POST` endpoint. The URL of this endpoint is the `oracle-url` specified in the order configuration (see [ob-yaml spec](./ob-yaml.md)).
 
 There is no `GET` fallback. The request body is always required.
 
-## Request
+### Request
 
-### Method
+**Method:** `POST`
 
-`POST`
+**Content-Type:** `application/octet-stream`
 
-### Content-Type
-
-`application/octet-stream`
-
-### Body
-
-The request body is the **raw ABI-encoded bytes** of the following tuple:
+**Body:** Raw ABI-encoded bytes of the following tuple:
 
 ```solidity
 abi.encode(OrderV4 order, uint256 inputIOIndex, uint256 outputIOIndex, address counterparty)
 ```
 
-Where:
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `order` | `OrderV4` | The full order struct being taken or cleared |
+| `inputIOIndex` | `uint256` | Index into `order.validInputs[]` for the current IO pair |
+| `outputIOIndex` | `uint256` | Index into `order.validOutputs[]` for the current IO pair |
+| `counterparty` | `address` | The address of the taker or clearer |
 
-- **`order`** — the full `OrderV4` struct of the order being taken/cleared
-- **`inputIOIndex`** — index into `order.validInputs[]` for the current IO pair
-- **`outputIOIndex`** — index into `order.validOutputs[]` for the current IO pair
-- **`counterparty`** — the address of the taker/clearer. Use `address(0)` when the counterparty is unknown (e.g. at quote time)
+ABI encoding is used because it is canonical — there are no JSON key ordering ambiguities, and `OrderV4` contains nested arrays and bytes fields that are complex to serialize in other formats.
 
-ABI encoding is used because it is canonical — there are no JSON key ordering ambiguities, and the `OrderV4` struct contains nested arrays and bytes fields that are complex to serialize otherwise.
-
-### Solidity types
+The Solidity types are:
 
 ```solidity
 struct IOV2 {
@@ -72,9 +60,9 @@ struct OrderV4 {
 
 These are the canonical Rain orderbook types. Implementations SHOULD use generated bindings from the Rain orderbook ABI rather than manual encoding.
 
-## Response
+### Response
 
-### Success (200)
+**Success (200)**
 
 Content-Type: `application/json`
 
@@ -88,11 +76,13 @@ Content-Type: `application/json`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `signer` | `address` | The address that produced the signature. The order's Rainlang expression should check that the signer is a trusted address. |
-| `context` | `bytes32[]` | Array of 32-byte values. These become the signed context column available to the Rainlang expression during evaluation. Values are typically encoded as Rain DecimalFloats. |
-| `signature` | `bytes` | 65-byte EIP-191 signature (r ∥ s ∥ v) over `keccak256(abi.encodePacked(context[]))`. |
+| `signer` | `address` | The address that produced the signature |
+| `context` | `bytes32[]` | Array of 32-byte values. These become the signed context column available to the order's Rainlang expression during evaluation |
+| `signature` | `bytes` | 65-byte EIP-191 signature (r ∥ s ∥ v) over `keccak256(abi.encodePacked(context[]))` |
 
-### Error (400)
+Values in the `context` array SHOULD be encoded as Rain DecimalFloats where they represent numeric data, so that they can be read directly by Rainlang arithmetic operations.
+
+**Error (4xx/5xx)**
 
 ```json
 {
@@ -101,77 +91,36 @@ Content-Type: `application/json`
 }
 ```
 
-Standard error codes:
-
-| Code | Meaning |
-|------|---------|
-| `invalid_body` | The request body could not be ABI-decoded |
-| `invalid_index` | `inputIOIndex` or `outputIOIndex` is out of bounds for the order |
-| `unsupported_token_pair` | The input/output token pair is not supported by this oracle |
-
-Servers MAY define additional error codes.
-
-### Error (500)
-
-Internal server errors (e.g. upstream data source failure) SHOULD return a 500 with a JSON body in the same `{error, detail}` format.
-
-## Signing
+### Signing
 
 The signature MUST be an EIP-191 "personal sign" signature:
 
-1. Compute the message: `abi.encodePacked(context[0], context[1], ..., context[n])` (raw concatenation of the bytes32 values)
-2. Hash the message: `hash = keccak256(packed)`
-3. Sign using EIP-191: `sign("\x19Ethereum Signed Message:\n32" + hash)`
+1. Concatenate the context values: `packed = abi.encodePacked(context[0], context[1], ..., context[n])`
+2. Hash: `hash = keccak256(packed)`
+3. Sign with EIP-191: `sign("\x19Ethereum Signed Message:\n32" ++ hash)`
 
 This matches how the Rain orderbook contract verifies signatures via `LibContext.build`, which uses OpenZeppelin's `ECDSA.recover` with `toEthSignedMessageHash`.
 
-## Context Layout
+## Onchain Discovery
 
-The `context` array is an ordered list of `bytes32` values that the Rainlang expression reads by index. The layout is oracle-specific — different oracles may return different data.
+When an order specifies an `oracle-url`, the tooling MUST encode a `RaindexSignedContextOracleV1` metadata item (magic number `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1` at deployment time.
 
-### Recommended layout for price oracles
+This is how takers, solvers, bots, and frontends discover the oracle endpoint for any onchain order. Without this metadata, there would be no standard way for a third party to know where to fetch the signed context for an order they want to take.
 
-| Index | Value | Encoding |
-|-------|-------|----------|
-| 0 | Price | Rain DecimalFloat |
-| 1 | Expiry timestamp | Rain DecimalFloat (unix seconds) |
+The metadata item contains the oracle URL as a UTF-8 encoded string.
 
-**Rain DecimalFloat** is the standard numeric encoding used throughout Rain. Implementations SHOULD use the `rain_math_float` crate (or equivalent) for encoding rather than manual bit packing.
+## Security Model
 
-### Expiry
+The order owner is the party who stands to lose funds if the oracle misbehaves — they are trusting the oracle server (identified by its signer address) with control over the data their order uses to calculate ratios, maximums, and any other logic.
 
-Oracle servers SHOULD include an expiry timestamp in the context. The order's Rainlang expression SHOULD check that the expiry has not passed:
+It is the order owner's responsibility to:
 
-```rainlang
-oracle-expiry: signed-context<0 1>(),
-:ensure(greater-than(oracle-expiry now()));
-```
+- Choose an oracle and signer they trust
+- Include any onchain protections they want in their Rainlang expression (e.g. expiry checks, zero ratio guards, price bounds, or any other validation)
+- Understand that the oracle server has full knowledge of the order struct, IO pair, and counterparty for every request
 
-Short expiry windows (e.g. 5-30 seconds) are recommended to prevent stale price usage.
-
-## Price Direction
-
-When the oracle serves a price feed for a specific token pair (e.g. ETH/USD), the server SHOULD inspect the order's `validInputs[inputIOIndex].token` and `validOutputs[outputIOIndex].token` to determine the correct price direction:
-
-- If input is the quote token and output is the base token → return price as-is
-- If input is the base token and output is the quote token → return the inverse (1/price)
-
-This ensures the Rainlang expression always receives the price in the correct orientation for the IO ratio, without needing to handle inversion in Rainlang.
-
-## On-chain Discovery
-
-When an order specifies an `oracle-url`, the tooling encodes a `RaindexSignedContextOracleV1` metadata item (magic number `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1` at deployment time. This allows anyone — bots, frontends, indexers — to discover the oracle endpoint for any on-chain order by reading its metadata.
-
-See the [ob-yaml spec](./ob-yaml.md) for how `oracle-url` is specified in order configuration.
+The contract enforces only that the signature is valid for the declared signer address. All other validation is up to the Rainlang expression.
 
 ## Reference Implementation
 
-A reference implementation is available at [hardyjosh/rain-oracle-server](https://github.com/hardyjosh/rain-oracle-server). It fetches prices from Pyth Network, encodes them as Rain DecimalFloats, and signs the context using EIP-191.
-
-## Security Considerations
-
-- **Signer trust:** The Rainlang expression is responsible for checking the signer address. An oracle server's signer address should be published and verified out-of-band.
-- **Expiry:** Always check expiry on-chain. Without expiry checks, a stale signed context could be replayed indefinitely.
-- **Counterparty:** The counterparty address may be `address(0)` at quote time. Oracle servers SHOULD handle this gracefully (e.g. ignore the counterparty field for price-only oracles).
-- **HTTPS:** Oracle URLs SHOULD use HTTPS in production. Tooling MAY reject non-HTTPS URLs.
-- **CORS:** Oracle servers SHOULD allow cross-origin requests (permissive CORS) so that browser-based frontends can fetch signed contexts directly.
+A reference implementation is available at [hardyjosh/rain-oracle-server](https://github.com/hardyjosh/rain-oracle-server). It fetches prices from Pyth Network, encodes them as Rain DecimalFloats, signs the context with EIP-191, and demonstrates price direction handling based on the order's input/output tokens.
