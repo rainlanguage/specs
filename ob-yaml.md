@@ -181,6 +181,7 @@ Optional fields:
 - `label` (fetch from contract, called `name` in the erc20 interface)
 - `symbol` (fetch from contract)
 - `logo-uri` (fetch from token list)
+- `extensions` (fetch from token list, free-form key-value mapping as per the token list standard)
 
 ```
 tokens:
@@ -191,6 +192,11 @@ tokens:
     label: USD Coin
     symbol: USDC
     logo-uri: https://example.com/usdc-logo.png
+    extensions:
+      bridgeInfo:
+        10:
+          tokenAddress: 0x0b2c639c533813f4aa9d7837caf62653d097ff85
+      coingeckoId: usd-coin
   eth-dai:
     network: mainnet
     address: 0x6b175474e89094c44da98b954eedeac495271d0f
@@ -200,7 +206,7 @@ tokens:
 
 To support prepopulating the app with token information we support `using-tokens-from` which fetches well known lists of tokens with well known formats and maps them internally to what we need/expect. The format follows the standard defined at https://tokenlists.org/
 
-The application will fetch the specified URLs, parse the JSON token lists, and map tokens to known networks using the chain ID. It will generate the internal token entries automatically. Ensure the networks referenced by chain ID in the token lists are defined in the `networks` section.
+The application will fetch the specified URLs, parse the JSON token lists, and map tokens to known networks using the chain ID. It will generate the internal token entries automatically, including any `extensions` defined on tokens in the remote list. Ensure the networks referenced by chain ID in the token lists are defined in the `networks` section.
 
 The `using-tokens-from` field is a list of URLs to token lists.
 
