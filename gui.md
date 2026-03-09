@@ -4,100 +4,162 @@
 
 The `gui` section within the YAML configuration provides metadata specifically tailored for building user interfaces related to Rainlang strategies. It acts as a bridge between the core technical definition of deployments, tokens, orders, etc., and their presentation to an end-user in a graphical application.
 
-This section dictates how strategy deployments are named, described, and how their configurable parameters (bindings, deposits, token selections) should be rendered as interactive UI elements. It allows for user-friendly labels, descriptions, default values, and predefined options (presets) to simplify the user experience.
+This section dictates how strategies are named, described, and how their configurable parameters (bindings, deposits, token selections) should be rendered as interactive UI elements. It allows for user-friendly labels, descriptions, default values, and predefined options (presets) to simplify the user experience.
 
 ## Top-Level `gui` Object
 
-The root of the GUI configuration is the `gui:` key. It contains general information about the strategy or set of deployments described in the file.
+The root of the GUI configuration is the `gui:` key. It contains general information about the strategy and defines reusable field definitions and variations.
 
 ```yaml
 gui:
   name: Fixed limit
   description: Fixed limit order strategy
   short-description: Buy WETH with USDC on Base.
-  deployments:
-    # ... deployment configurations ...
+  field-definitions:
+    # ... field definitions ...
+  variations:
+    # ... variation configurations ...
 ```
 
 ### Fields
 
 * `name`
   * **Required**: Yes
-  * **Description**: The primary, human-readable name for the overall strategy or configuration presented in the GUI.
+  * **Description**: The primary, human-readable name for the overall strategy presented in the GUI.
 * `description`
   * **Required**: Yes
-  * **Description**: A more detailed description of the strategy or configuration, intended for display in the GUI.
+  * **Description**: A more detailed description of the strategy, intended for display in the GUI.
 * `short-description`
   * **Required**: No
   * **Description**: An optional, concise description, potentially used in contexts where space is limited (e.g., list views, tooltips).
-* `deployments`
+* `field-definitions`
+  * **Required**: No
+  * **Description**: A map of reusable field definitions that can be referenced by variations. See the [Field Definitions](#field-definitions) section for details.
+* `variations`
   * **Required**: Yes
-  * **Description**: A map containing the specific UI configurations for one or more named deployments. See the [Deployments Map](#deployments-map-deployments) section for details.
+  * **Description**: A map containing the specific UI configurations for different strategy variations. See the [Variations Map](#variations-map) section for details.
 
-## Deployments Map (`deployments`)
+## Field Definitions
 
-The `deployments` field under `gui` holds a map where each key is the name of a deployment (which must correspond to a deployment defined elsewhere in the configuration, e.g., under the top-level `deployments:` key) and the value is an object defining the GUI configuration specific to that deployment.
-
-```yaml
-gui:
-  # ... name, description ...
-  deployments:
-    <deployment-key-1>:
-      # ... configuration for deployment 1 ...
-    <deployment-key-2>:
-      # ... configuration for deployment 2 ...
-    # ... etc ...
-```
-
-## Deployment Configuration (`<deployment-key>`)
-
-Each entry within the `deployments` map defines the specific UI elements and text for a single deployment.
+The `field-definitions` field under `gui` holds a map where each key is a field identifier and the value defines the complete UI configuration for that field. These definitions are referenced by variations to avoid duplication.
 
 ```yaml
 gui:
-  # ...
-  deployments:
-    some-deployment: # This key must match a defined deployment
-      name: Buy WETH with USDC on Base.
-      description: Buy WETH with USDC for fixed price on Base network.
-      short-description: Buy WETH with USDC on Base.
-      deposits:
-        # ... deposit items ...
-      fields:
-        # ... field items ...
-      select-tokens:
-        # ... select token items ...
+  field-definitions:
+    time-per-amount-epoch:
+      name: Budget period (in seconds)
+      description: The budget is spent over this time period
+      show-custom-field: true
+      default: 86400
+      presets:
+        - name: Per day (86400)
+          value: 86400
+        - name: Per week (604800)
+          value: 604800
+      validation:
+        type: number
+        minimum: 60
+    amount-per-epoch:
+      name: Budget (${order.outputs.0.token.symbol} per period)
+      description: The amount to spend each budget period
+      default: 0
+      validation:
+        type: number
+        minimum: 0
 ```
 
-### Fields
+### Field Definition Structure
+
+Each field definition contains the complete configuration for a user-configurable input field. The field identifier (the key in the map) corresponds to the binding name in scenarios.
+
+#### Fields
 
 * `name`
   * **Required**: Yes
-  * **Description**: The name of this specific deployment variation as it should appear in the GUI.
+  * **Description**: The human-readable label displayed for this input field in the GUI. Can include template variables like `${order.outputs.0.token.symbol}`.
+* `description`
+  * **Required**: No
+  * **Description**: An optional, longer description or help text displayed for this field, potentially as a tooltip or helper text.
+* `presets`
+  * **Required**: No
+  * **Description**: An optional list of [Preset Items](#preset-item) containing predefined values the user can select for this field.
+* `default`
+  * **Required**: No
+  * **Description**: An optional default value to pre-populate the input field with.
+* `validation`
+  * **Required**: No
+  * **Description**: An optional [Validation Object](#validation-object) defining validation rules for the field's value.
+* `show-custom-field`
+  * **Required**: No
+  * **Description**: Controls whether the user is presented with a free-form input field in addition to any defined presets. When set to `false`, the user can only select from presets. Defaults to `true`.
+
+## Variations Map
+
+The `variations` field under `gui` holds a map where each key is a variation identifier and the value defines the specific UI configuration for that variation of the strategy.
+
+```yaml
+gui:
+  variations:
+    standard:
+      name: Standard DCA
+      description: Deploy a standard dollar-cost averaging order
+      fields:
+        - time-per-amount-epoch
+        - amount-per-epoch
+      deposits:
+        - token: output
+      select-tokens:
+        - key: output
+          name: Token to Sell
+        - key: input
+          name: Token to Buy
+      networks:
+        42161: arbitrum
+        14: flare
+    special-variant:
+      name: Special Variant
+      description: A specialized version of the strategy
+      fields:
+        - time-per-amount-epoch
+        - special-field
+      deposits:
+        - token: special-token
+      networks:
+        14: special-deployment
+```
+
+### Variation Configuration
+
+Each variation defines which fields to show, which tokens can be deposited, and how it maps to different networks and deployments.
+
+#### Fields
+
+* `name`
+  * **Required**: Yes
+  * **Description**: The name of this variation as it should appear in the GUI.
 * `description`
   * **Required**: Yes
-  * **Description**: A detailed description for this specific deployment variation.
-* `short-description`
-  * **Required**: No
-  * **Description**: An optional, concise description for this deployment variation.
-* `deposits`
-  * **Required**: Yes
-  * **Description**: A list of [Deposit Items](#deposit-item) that defines the tokens users can deposit into the strategy and provides UI hints like presets.
+  * **Description**: A detailed description for this specific variation.
 * `fields`
   * **Required**: Yes
-  * **Description**: A list of [Field Items](#field-item) that defines the user-configurable parameters (bindings) for the strategy, including labels, descriptions, presets, and defaults.
+  * **Description**: A list of field identifiers referencing entries in `field-definitions`. The order in the list determines the display order in the GUI.
+* `deposits`
+  * **Required**: Yes
+  * **Description**: A list of [Deposit Items](#deposit-item) that defines the tokens users can deposit into the strategy.
 * `select-tokens`
   * **Required**: No
-  * **Description**: A list of [Select Token Items](#select-token-item) that defines specific tokens that might be selectable in other parts of the UI for this deployment (e.g., choosing an output token if the strategy supports it).
+  * **Description**: A list of [Select Token Items](#select-token-item) that defines tokens that need to be selected by the user. Only include tokens that require user selection; hardcoded tokens should be defined directly in the order.
+* `networks`
+  * **Required**: Yes
+  * **Description**: A map where keys are chain IDs (as integers) and values are deployment identifiers (referencing keys in the top-level `deployments` map). This determines which deployment to use for each network when this variation is selected.
 
 ## Deposit Item
 
 Each item in the `deposits` list defines a token that can be deposited and optional preset amounts for the UI.
 
 ```yaml
-# Example within a deployment's deposits list:
 deposits:
-  - token: token1 # Must match a defined token key
+  - token: output # References one of the order's inputs/outputs
     presets:
       - 0
       - 10
@@ -118,93 +180,13 @@ deposits:
 
 * `token`
   * **Required**: Yes
-  * **Description**: The key referencing a token defined in the top-level `tokens` section. This specifies which token the deposit configuration applies to.
+  * **Description**: The key referencing a token. This corresponds to a token defined in the order's inputs/outputs.
 * `presets`
   * **Required**: No
   * **Description**: An optional list of suggested deposit amounts to display as quick options in the UI. The UI will typically show these alongside the primary deposit input field.
 * `validation`
   * **Required**: No
   * **Description**: An optional [Validation Object](#validation-object) defining validation rules for the deposit amount. For deposits, this will always use number validation rules. See the [Validation Object](#validation-object) section for details on available number validation fields like `minimum`, `exclusiveMinimum`, `maximum`, `exclusiveMaximum`, and `multipleOf`.
-
-## Field Item
-
-Each item in the `fields` list defines a user-configurable input field, mapping it to an underlying Rainlang binding.
-
-```yaml
-# Example within a deployment's fields list:
-fields:
-  - binding: binding-1 # The corresponding binding in the Rainlang source
-    name: Price
-    description: The price for the order
-    presets:
-      # ... preset items for this field ...
-    default: 100.50
-    validation:
-      type: number
-      minimum: 0.01
-      multipleOf: 0.01
-  - binding: binding-2
-    name: Slippage Tolerance
-    description: Maximum allowed slippage in percentage
-    validation:
-      type: number
-      minimum: 0
-      maximum: 100
-  - binding: user-provided-note
-    name: Order Note
-    description: A custom note for the order
-    validation:
-      type: string
-      maxLength: 140
-    show-custom-field: true # Explicitly allow custom input
-```
-
-### Fields
-
-* `binding`
-  * **Required**: Yes
-  * **Description**: The name of the binding in the associated Rainlang source code that this field provides the value for.
-* `name`
-  * **Required**: Yes
-  * **Description**: The human-readable label displayed for this input field in the GUI.
-* `description`
-  * **Required**: No
-  * **Description**: An optional, longer description or help text displayed for this field, potentially as a tooltip or helper text.
-* `presets`
-  * **Required**: No
-  * **Description**: An optional list of [Preset Items](#preset-item) containing predefined values the user can select for this field.
-* `default`
-  * **Required**: No
-  * **Description**: An optional default value to pre-populate the input field with.
-* `validation`
-  * **Required**: No
-  * **Description**: An optional [Validation Object](#validation-object) defining validation rules for the field's value. This includes specifying the semantic type (e.g., "number", "string", "boolean") and type-specific rules like `minimum`/`exclusiveMinimum`/`maximum`/`exclusiveMaximum` for numbers, or `minLength`/`maxLength` for strings. See the [Validation Object](#validation-object) section for details.
-* `show-custom-field`
-  * **Required**: No
-  * **Description**: Controls whether the user is presented with a free-form input field in addition to any defined presets. When set to a falsy value (e.g., `false`), the user might only be able to select from the presets. When set to a truthy value or omitted, a custom input field is typically shown.
-
-## Preset Item
-
-Each item in a field's `presets` list defines a single predefined option for that field.
-
-```yaml
-# Example within a field's presets list:
-presets:
-  - name: Preset 1 Name # Optional name for the preset
-    value: 0x1234567890abcdef1234567890abcdef12345678
-  - value: false # Preset without an explicit name
-  - name: Preset 3 Name
-    value: some-string
-```
-
-### Fields
-
-* `name`
-  * **Required**: No
-  * **Description**: An optional label for the preset option shown in the UI (e.g., in a dropdown or radio button list). If omitted, the `value` itself might be displayed.
-* `value`
-  * **Required**: Yes
-  * **Description**: The actual value that will be used for the binding if this preset is selected.
 
 ## Select Token Item
 

@@ -4,7 +4,7 @@
 - Avoid repetition
 - prefer named items (k/v sets) over unordered lists with inline ad hoc naming
   - can be referenced elsewhere unambiguously
-- avoid needless depth in heirarchies
+- avoid needless depth in hierarchies
   - prefer flat, except where it would imply excessive repetition
 - support multitudes of things
 - strict yaml for parsing, apply explicit schemas/types for non-strings
@@ -53,7 +53,7 @@ https://besu.hyperledger.org/23.4.0/public-networks/concepts/network-and-chain-i
 
 ### Example
 
-```
+```yaml
 networks:
   mainnet:
     rpcs: 
@@ -93,11 +93,29 @@ needed.
 
 ### Example
 
-```
+```yaml
 using-networks-from:
   chainid:
     url: https://chainid.network/chains.json
     format: chainid
+```
+
+## Network Values
+
+The `network-values` section provides network-specific values that can be referenced in scenarios (and in future potentially other parts of the yaml) using template syntax. This allows strategies to share scenario definitions while using different network-specific addresses or configuration values.
+
+Network values have no required structure - they are arbitrary key-value pairs that can be referenced via `${network-values.property}` syntax in scenario bindings.
+
+### Example
+
+```yaml
+network-values:
+  arbitrum:
+    raindex-subparser: 0xe80e7438ce6b1055c8e9CDE1b6336a4F9D53C666
+    subparser-0: 0xe80e7438ce6b1055c8e9CDE1b6336a4F9D53C666
+  flare:
+    raindex-subparser: 0xFe2411CDa193D9E4e83A5c234C7Fd320101883aC
+    subparser-0: 0x915E36ef882941816356bC3718Df868054F868aD
 ```
 
 ## Subgraphs
@@ -106,20 +124,20 @@ Currently subgraphs are 1:1 with orderbooks, but this could and probably should 
 
 Subgraphs have no fields, they're merely a name for a url string.
 
-```
+```yaml
 subgraphs:
   polygon: https://...
   polygon2: https://...
   mainnet: https://...
 ```
 
-# Metaboards
+## Metaboards
 
 Metaboard is an onchain contract for posting Rain meta about a subject (an address). This meta is indexed by a metaboard subgraph. Currently these are 1-1 with networks.
 
 Metaboards have no fields, they're merely a name for a url string.
 
-```
+```yaml
 metaboards:
   polygon: https://...
   polygon2: https://...
@@ -139,7 +157,7 @@ Optional fields:
   - `subgraph` (default is same as orderbook name)
   - `label`
 
-```
+```yaml
 orderbooks:
   polygon:
     address: 0x...
@@ -164,7 +182,7 @@ At the minimum a token is a network, address and decimals. While ERC20 doesn't m
 
 > **Note:** The top-level `tokens` field is optional and may be omitted if no tokens need to be predefined. Orders can reference tokens from other sources, including:
 > - `using-tokens-from`
-> - the GUI’s `select-tokens` field under the top-level `gui` section
+> - the GUI's `select-tokens` field under variations
 >
 > The top-level `tokens` mapping will be populated automatically by these sources when used.
 
@@ -183,7 +201,7 @@ Optional fields:
 - `logo-uri` (fetch from token list)
 - `extensions` (fetch from token list, free-form key-value mapping as per the token list standard)
 
-```
+```yaml
 tokens:
   eth-usdc:
     network: mainnet
@@ -232,7 +250,7 @@ Optional fields:
   - `network` (assume deployer name if not set)
   - `label`
 
-```
+```yaml
 deployers:
   mainnet:
     address: 0x...
@@ -249,7 +267,7 @@ Accounts are optional filters that can be used to filter the orderbook to only s
 
 Account aliases are mapped to account addresses.
 
-```
+```yaml
 accounts:
   my-account: 0x...
   my-other-account: 0x...
@@ -262,7 +280,7 @@ The app will optionally collect analytics data to send to Sentry. This functiona
 Optional fields:
 - `sentry` (defaults to 'true')
 
-```
+```yaml
 sentry: false
 ```
 
@@ -287,7 +305,7 @@ Optional fields:
 - `deployer` (defaults to network deployer if unambiguous, otherwise required)
 - `orderbook` (defaults to network orderbook if unambiguous, otherwise required)
 
-```
+```yaml
 orders:
   dca-eth:
     inputs:
@@ -315,11 +333,13 @@ orders:
         vault-id: 0xabcd
 ```
 
-### front matter scenarios
+### Front matter scenarios
 
 Scenarios are a hierarchical structure that specifies bindings used by `dotrain` tooling to produce a concrete rainlang instance that can be parsed and deployed onchain, and deliberately introduces ambiguity to be iteratively disambiguated by a fuzzer, for the purpose of producing simulations.
 
 The bindings in yaml are forwarded as-is to `dotrain` as strings, so all forms are supported including quote bindings, etc.
+
+Scenarios support template syntax for referencing network-specific values via `${network-values.property}` which will be resolved based on the network context when deploying.
 
 All fields are optional, if there exists enough unambiguous deployment components all sharing the same name, e.g. `mainnet` and there are no elided bindings in the body of the .rain file (under the front matter) then a deployment is possible, as no bindings are required.
 
@@ -382,7 +402,7 @@ scenarios:
       bing: ...
 ```
 
-### front matter charts
+### Front matter charts
 
 Any scenario can be charted as every concrete set of bindings can be treated as
 a data point. For a single concrete set, a single data point is produced, for a
@@ -501,15 +521,15 @@ charts:
                       bin-width: 50
 ```
 
-### front matter deployments
+### Front matter deployments
 
-Specifies deployments that consist of `scenario` in combination with an `order` mapped to a key:
+Specifies deployments that consist of `scenario` in combination with an `order` mapped to a key. These deployment keys are referenced by GUI variations to determine which deployment to use for each network.
 
 Required deployment fields:
 - `scenario` name of a defined `scenario`
 - `order` name of a defined `order`
 
-```
+```yaml
 deployments:
   first-deployment:
     scenario: scenario1
@@ -517,4 +537,35 @@ deployments:
   second-deployment:
     scenario: scenario2
     order: order2
+```
+
+## GUI Configuration
+
+See the separate [GUI Configuration](gui.md) documentation for details on the `gui` section. The GUI configuration in version 2 introduces:
+
+- `field-definitions`: Reusable field configurations that avoid duplication
+- `variations`: Different strategy variations that map to deployments based on network
+
+Example structure:
+
+```yaml
+gui:
+  name: Strategy Name
+  description: Strategy description
+  field-definitions:
+    field-1:
+      name: Field Name
+      description: Field description
+      default: 0
+  variations:
+    standard:
+      name: Standard Variation
+      description: Description
+      fields:
+        - field-1
+      deposits:
+        - token: output
+      networks:
+        42161: arbitrum  # Chain ID → deployment key
+        14: flare
 ```
