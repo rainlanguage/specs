@@ -164,11 +164,11 @@ At the minimum a token is a network, address and decimals. While ERC20 doesn't m
 
 > **Note:** The top-level `tokens` field is optional and may be omitted if no tokens need to be predefined. Orders can reference tokens from other sources, including:
 > - `using-tokens-from`
-> - the GUI’s `select-tokens` field under the top-level `gui` section
+> - the builder's `select-tokens` field under the top-level `builder` section
 >
 > The top-level `tokens` mapping will be populated automatically by these sources when used.
 
-The GUI MAY query the network rpc + address to attempt to populate the optional fields (notably decimals). Note that the ERC20 specification explicitly DOES NOT mandate that tokens implement the metadata methods, including decimals. If the contract query fails, and the relevant optional field has not been specified in the yaml, this MUST be treated as an error for the user to fix. NEVER assume decimal values that haven't been provided by the contract/user.
+The builder MAY query the network rpc + address to attempt to populate the optional fields (notably decimals). Note that the ERC20 specification explicitly DOES NOT mandate that tokens implement the metadata methods, including decimals. If the contract query fails, and the relevant optional field has not been specified in the yaml, this MUST be treated as an error for the user to fix. NEVER assume decimal values that haven't been provided by the contract/user.
 
 Required fields:
 
@@ -268,7 +268,7 @@ sentry: false
 
 ## Front matter yaml
 
-This yaml is NOT arbitrary across the GUI. It only makes sense when coupled to some specific rainlang, which also makes the most sense when provided as frontmatter that can be directly parsed, composed and bound by the `dotrain` tool.
+This yaml is NOT arbitrary across the builder. It only makes sense when coupled to some specific rainlang, which also makes the most sense when provided as frontmatter that can be directly parsed, composed and bound by the `dotrain` tool.
 
 ### Front matter orders
 
@@ -276,7 +276,7 @@ Top level element `orders` in the front matter.
 
 Used to define a set of named orders that can be deployed onchain using `addOrder` on an orderbook contract.
 
-Requires all the deployment components to be defined already somehow in the GUI as per the above yamls.
+Requires all the deployment components to be defined already somehow in the builder as per the above yamls.
 Network will be taken from inputs/outputs token's network, and they must match as well as `deployer` and `orderbook` if they are specified.
 
 Required fields:

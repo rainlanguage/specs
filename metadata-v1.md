@@ -259,7 +259,7 @@ decoding and handling.
 
 - Consider some JSON ABIv2 document produced by solc then deflated
 - A contract meta that references parts of the ABI and provides additional data
-  that a GUI can use to better describe the contract operation to a human, this
+  that a builder can use to better describe the contract operation to a human, this
   meta is encoded with cbor but provided as-is uncompressed
 
 The broad structure of the meta document would be
