@@ -30,7 +30,7 @@ Required fields:
 ### Example
 
 ```yaml
-version: 1
+version: 5
 ```
 
 ## Networks
