@@ -347,7 +347,32 @@ Optional fields:
 - `rainlang` (defaults to network rainlang if unambiguous, otherwise required)
 - `orderbook` (defaults to network orderbook if unambiguous, otherwise required)
 
-```
+#### Input/Output fields
+
+Required fields:
+- `token` (foreign key into the tokens mapping)
+
+Optional fields:
+- `vault-id` (vault identifier, generates random if omitted and not vaultless)
+- `vaultless` (boolean, default `false`) - when `true`, uses wallet directly instead of vault
+
+#### Vaultless mode
+
+When `vaultless: true`, the order uses the owner's wallet directly instead of a vault:
+- **Vaultless inputs**: Tokens received are sent directly to the owner's wallet
+- **Vaultless outputs**: Tokens given are pulled directly from the owner's wallet (requires approval)
+- **Hybrid orders**: Each input/output can independently be vaultless or vault-based
+
+##### Validation rules
+
+| Scenario | Result |
+|----------|--------|
+| `vaultless: true` | Valid - uses wallet directly |
+| `vaultless: true` + `vault-id: X` | Error: "Using vault-id is not allowed in vaultless mode" |
+| `vault-id: 0` | Error: "Invalid vault-id value. For vaultless mode use vaultless: true" |
+| `vaultless: false` or omitted | Uses `vault-id` if specified, otherwise generates random |
+
+```yaml
 orders:
   dca-eth:
     inputs:
@@ -373,6 +398,22 @@ orders:
         vault-id: 99
       - token: polygon-usdt
         vault-id: 0xabcd
+  vaultless-order:
+    inputs:
+      - token: eth-weth
+        vaultless: true
+    outputs:
+      - token: eth-usdc
+        vault-id: 1
+  hybrid-order:
+    inputs:
+      - token: eth-weth
+        vaultless: true
+    outputs:
+      - token: eth-usdc
+        vaultless: true
+      - token: eth-dai
+        vault-id: 0x123
 ```
 
 ### front matter scenarios
