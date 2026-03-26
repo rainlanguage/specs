@@ -346,6 +346,15 @@ Optional fields:
 
 - `rainlang` (defaults to network rainlang if unambiguous, otherwise required)
 - `orderbook` (defaults to network orderbook if unambiguous, otherwise required)
+- `oracle-url` (URL of a signed context oracle server, see below)
+
+### Oracle URL
+
+Orders that require external data (e.g. price feeds) can specify an `oracle-url`. This URL points to a server implementing the [Signed Context Oracle protocol](./signed-context-oracle.md). The signed context is provided by the caller when taking or clearing the order — the order's Rainlang expression can then read this data from the signed context columns during evaluation.
+
+When `oracle-url` is specified, the tooling encodes a `RaindexSignedContextOracleV1` metadata item (magic `0xff7a1507ba4419ca`) into the order's `RainMetaDocumentV1`. This allows the oracle endpoint to be discovered onchain by anyone who needs to take or clear the order (e.g. Raindex bots, the webapp, or other takers).
+
+See the [Signed Context Oracle spec](./signed-context-oracle.md) for full protocol details including the POST request format, response schema, signing requirements, and security considerations.
 
 ```
 orders:
@@ -373,6 +382,14 @@ orders:
         vault-id: 99
       - token: polygon-usdt
         vault-id: 0xabcd
+  oracle-order:
+    oracle-url: https://my-oracle-server.example.com/context
+    inputs:
+      - token: eth-weth
+        vault-id: 1
+    outputs:
+      - token: eth-usdc
+        vault-id: 1
 ```
 
 ### front matter scenarios
