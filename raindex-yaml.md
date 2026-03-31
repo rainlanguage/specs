@@ -27,10 +27,16 @@ Required fields:
 
 - `version`
 
+### Version history
+
+- **6** — Renamed `orderbooks` key to `raindexes`, `orderbook` field in orders
+  to `raindex`
+- **5** — Previous stable version
+
 ### Example
 
 ```yaml
-version: 5
+version: 6
 ```
 
 ## Networks
