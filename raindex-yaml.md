@@ -336,7 +336,7 @@ tool.
 Top level element `orders` in the front matter.
 
 Used to define a set of named orders that can be deployed onchain using
-`addOrder` on an raindex contract.
+`addOrder` on a raindex contract.
 
 Requires all the deployment components to be defined already somehow in the GUI
 as per the above yamls. Network will be taken from inputs/outputs token's
