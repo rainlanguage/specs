@@ -27,10 +27,16 @@ Required fields:
 
 - `version`
 
+### Version history
+
+- **6** — Renamed `orderbooks` key to `raindexes`, `orderbook` field in orders
+  to `raindex`
+- **5** — Previous stable version
+
 ### Example
 
 ```yaml
-version: 5
+version: 6
 ```
 
 ## Networks
@@ -112,12 +118,12 @@ using-networks-from:
 
 ## Subgraphs
 
-Currently subgraphs are 1:1 with orderbooks, but this could and probably should
+Currently subgraphs are 1:1 with raindexes, but this could and probably should
 change in the future. It would be far better for downstream implementations if a
-single subgraph could handle _at least_ all bytecode identical orderbooks
+single subgraph could handle _at least_ all bytecode identical raindexes
 deployed to the same network, if not a set of known compatible bytecodes. For
 that reason, it might seem overkill to specify subgraphs separately but they
-should have a 1:many relationship with orderbooks in the mid term.
+should have a 1:many relationship with raindexes in the mid term.
 
 Subgraphs have no fields, they're merely a name for a url string.
 
@@ -143,26 +149,26 @@ metaboards:
   mainnet: https://...
 ```
 
-## Orderbooks
+## Raindexes
 
-Every orderbook is a contract deployed on some chain (has an address) with a
+Every raindex is a contract deployed on some chain (has an address) with a
 subgraph that knows how to index it into the form expected by the application.
 
 Required fields:
 
 - `address`
-- `deployment-block` (block number when the orderbook contract was deployed,
-  used by indexers to determine the starting block for indexing)
+- `deployment-block` (block number when the raindex contract was deployed, used
+  by indexers to determine the starting block for indexing)
 
 Optional fields:
 
-- `network` (foreign key into the known networks k/v, default is same as
-  orderbook name)
-- `subgraph` (default is same as orderbook name)
+- `network` (foreign key into the known networks k/v, default is same as raindex
+  name)
+- `subgraph` (default is same as raindex name)
 - `label`
 
 ```
-orderbooks:
+raindexes:
   polygon:
     address: 0x...
     deployment-block: 12345678
@@ -269,7 +275,7 @@ address. This contract is the single entrypoint for discovering all components
 of a Rainlang system: parser, integrity checker, interpreter, and store.
 
 Typically a single Rainlang system will be used for many orders and even across
-many orderbooks.
+many raindexes.
 
 Required fields:
 
@@ -293,7 +299,7 @@ rainlangs:
 
 ## Accounts
 
-Accounts are optional filters that can be used to filter the orderbook to only
+Accounts are optional filters that can be used to filter the raindex to only
 show orders and vaults that belong to that account.
 
 Account aliases are mapped to account addresses.
@@ -330,11 +336,11 @@ tool.
 Top level element `orders` in the front matter.
 
 Used to define a set of named orders that can be deployed onchain using
-`addOrder` on an orderbook contract.
+`addOrder` on a raindex contract.
 
 Requires all the deployment components to be defined already somehow in the GUI
 as per the above yamls. Network will be taken from inputs/outputs token's
-network, and they must match as well as `rainlang` and `orderbook` if they are
+network, and they must match as well as `rainlang` and `raindex` if they are
 specified.
 
 Required fields:
@@ -345,7 +351,7 @@ Required fields:
 Optional fields:
 
 - `rainlang` (defaults to network rainlang if unambiguous, otherwise required)
-- `orderbook` (defaults to network orderbook if unambiguous, otherwise required)
+- `raindex` (defaults to network raindex if unambiguous, otherwise required)
 
 ```
 orders:
@@ -361,7 +367,7 @@ orders:
       - token: eth-usdt
         vault-id: 2
   dca-eth-polygon:
-    orderbook: polygon-experimental
+    raindex: polygon-experimental
     rainlang: polygon-experimental
     inputs:
       - token: polygon-weth
@@ -453,7 +459,7 @@ scenarios:
   fuzzer:
     network: testnet
     rainlang: testnet
-    orderbook: testnet
+    raindex: testnet
     runs: 10
     blocks:
       range: [10000..]
