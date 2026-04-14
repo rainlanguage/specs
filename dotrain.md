@@ -11,17 +11,17 @@ audited simply in a permissionless and adversarial environment such as a public
 blockchain.
 
 .rain files MUST facilitate "overlay style" code audits where composition of
-metadata itself can be shared at a social layer to create an audit trail of audit
-trails. Without this it will be more difficult to build an explicit and
+metadata itself can be shared at a social layer to create an audit trail of
+audit trails. Without this it will be more difficult to build an explicit and
 incremental model of trust, where participants earn/lose trust through producing
 onchain artifacts that can be used to justify their good or bad reputation.
 
-Composition MUST natively support iterative development practises such as
-"this is exactly that with only these changes". While we don't want to reinvent
-git, there are some aspects of git such as hashed "commits" that reference an
+Composition MUST natively support iterative development practises such as "this
+is exactly that with only these changes". While we don't want to reinvent git,
+there are some aspects of git such as hashed "commits" that reference an
 unambiguous _state_ which all existing audit trails and tooling relies upon. The
-.rain composition MUST ALSO be amenable to standard development practises such as
-git, the two systems should be complementary in nature.
+.rain composition MUST ALSO be amenable to standard development practises such
+as git, the two systems should be complementary in nature.
 
 Much as the bytecode syntax of Rainlang is 1:1 with bytecode, a .rain file is
 1:1 with a cbor-seq of metadata as described by the metadata spec. That is to
@@ -33,7 +33,8 @@ It follows from the above that some properties of .rain are desirable:
 
 - The ability to unambiguously import immutable data to support composition and
   auditability, mutable/ambiguous imports leads to "works on my machine"
-  situations that tooling cannot mitigate without heroic effort (e.g. all of nix)
+  situations that tooling cannot mitigate without heroic effort (e.g. all of
+  nix)
 - Clear extension points for tooling to provide all imaginable computer assisted
   analysis of code, to give readers/consumers every possible edge over malicious
   authors (both bytecode authors and metadata authors).
@@ -42,13 +43,13 @@ It follows from the above that some properties of .rain are desirable:
   blockchain and data in IPFS are hashed so that they can be handled p2p,
   decoupled from client, storage and transmission details.
 - Native support for namespacing to support disambiguation of the remaining
-  ambiguity that unavoidably arise in uncoordinated human-readable data
-  (two different computer names with the same human name)
-- The document structure should be as minimal as possible to facilitate stability
-  and extensibility and allow for simple tooling implementations. We want to make
-  as few decisions as possible that we might regret in the future, such as
-  hardcoding meaning into syntax, where that meaning might foreseeably change in
-  the future, or even be deprecated.
+  ambiguity that unavoidably arise in uncoordinated human-readable data (two
+  different computer names with the same human name)
+- The document structure should be as minimal as possible to facilitate
+  stability and extensibility and allow for simple tooling implementations. We
+  want to make as few decisions as possible that we might regret in the future,
+  such as hardcoding meaning into syntax, where that meaning might foreseeably
+  change in the future, or even be deprecated.
 
 ### Secondary goals
 
@@ -62,20 +63,20 @@ We (the people trying to write a spec for .rain) accept that we have blind spots
 in our understanding of absolutely every imaginable topic.
 
 Given a choice between two seemingly arbitrary and equivalent options, in our
-opinion, we should adopt the choice that seems most similar to comparable choices
-made by other people, in our observation.
+opinion, we should adopt the choice that seems most similar to comparable
+choices made by other people, in our observation.
 
 This gives us some ability to make better decisions without being aware of the
 underlying reasoning.
 
-An example of this is selection of some ascii character to represent some syntax,
-often `#` is just as valid as `%` or several other characters, yet we MUST pick
-something. To avoid analysis paralysis, it MAY be helpful to simply pin the
-decision to something else commonly found in the wild.
+An example of this is selection of some ascii character to represent some
+syntax, often `#` is just as valid as `%` or several other characters, yet we
+MUST pick something. To avoid analysis paralysis, it MAY be helpful to simply
+pin the decision to something else commonly found in the wild.
 
-However, often choices are NOT arbitrary and equivalent, so that's why convention
-is a secondary goal. In any case where conventions takes us further from the
-primary goals, we give ourselves permission to break from convention.
+However, often choices are NOT arbitrary and equivalent, so that's why
+convention is a secondary goal. In any case where conventions takes us further
+from the primary goals, we give ourselves permission to break from convention.
 
 ### Non goals
 
@@ -96,8 +97,8 @@ do in `<insert language here>` then they will introduce a bug every time this
 exactness breaks down. The obvious differences aren't half so dangerous, as
 everyone knows and loudly complains about them.
 
-We SHOULD adopt a very high bar of how similar two concepts are before stating or
-even implying that they _are_ the same concept. For example, Rainlang itself
+We SHOULD adopt a very high bar of how similar two concepts are before stating
+or even implying that they _are_ the same concept. For example, Rainlang itself
 stops short of defining any kind of "function" because the onchain behaviour
 doesn't necessarily provide the kinds of guarantees a function might provide in
 some (most) other languages. Another example is the `eager-if` word in the
@@ -118,7 +119,7 @@ thought too much about the tradeoffs of a lazy/eager "if".
 > programming, it still surprised me.
 >
 > - Yukihiro Matsumoto, creator of Ruby
-> https://www.artima.com/articles/the-philosophy-of-ruby
+>   https://www.artima.com/articles/the-philosophy-of-ruby
 
 Secondly, if we make "familiarity" an explicit goal then we have to also define
 "for who?", and this definition will inevitably reference some existing tool or
@@ -127,15 +128,15 @@ familiar with somehow, like "JavaScript devs" or "Spreadsheet jockeys".
 
 The problem with tighly coupling Rain systems to other systems is that Rain
 operates in a very specific context that comes with severe restrictions due to
-the nature of the operating environment. It's very likely that we _can't_ exactly
-implement a feature commonly found in X, because that feature relies on more
-relaxed compute or threat models that Rain doesn't have.
+the nature of the operating environment. It's very likely that we _can't_
+exactly implement a feature commonly found in X, because that feature relies on
+more relaxed compute or threat models that Rain doesn't have.
 
 Further, it couples Rain's reach to a subset of the reach of the reference
 system. It's very different to state "the target audience is someone who _could_
 understand spreadsheets" than "the target audience is someone who _does_ know
-_excel_". The former is a statement about broad technical aptitude and the second
-is a statement about a specific skill/language.
+_excel_". The former is a statement about broad technical aptitude and the
+second is a statement about a specific skill/language.
 
 #### No-tooling
 
@@ -151,11 +152,11 @@ comprehension the moment it binds to a DISpair.
 The goals of .rain documents are intented as stated _to allow tooling to exist_,
 whether a classic IDE, or some more specialised interface.
 
-Notably the details of how to produce and manage hashes of imports
-(discussed below) are never going to be produced by hand by a human.
+Notably the details of how to produce and manage hashes of imports (discussed
+below) are never going to be produced by hand by a human.
 
-Similarly the composition of Rainlang fragments into a Rainlang document involves
-several steps that cannot be done mentally by a human:
+Similarly the composition of Rainlang fragments into a Rainlang document
+involves several steps that cannot be done mentally by a human:
 
 - Checking hashes
 - Name bindings and namespaces
@@ -163,9 +164,9 @@ several steps that cannot be done mentally by a human:
 - Applying metadata such as opmeta to the final document to build a deployable
   artifact
 
-Rainlang has the goal that bytecode syntax can be recovered to a legible document
-from the DISpair alone but this doesn't mean the original .rain document tree
-is recoverable directly from deployed binary.
+Rainlang has the goal that bytecode syntax can be recovered to a legible
+document from the DISpair alone but this doesn't mean the original .rain
+document tree is recoverable directly from deployed binary.
 
 However, it SHOULD be trivial for an author (or anyone else) to provide:
 
@@ -200,8 +201,9 @@ like
 Then we can meaningfully talk about the structure of a .rain file as a human
 experiences it. Moving from binary data to a human legible file is outside the
 scope of this spec, and typically should be considered an implementation detail.
-For example a utf8 encoded .rain document on a file system and a utf16 javascript
-string containing the same characters should be considered equivalent and valid.
+For example a utf8 encoded .rain document on a file system and a utf16
+javascript string containing the same characters should be considered equivalent
+and valid.
 
 ## Allowed characters
 
@@ -224,8 +226,8 @@ characters/syntax described below:
 - `@` imports .rain/metadata
 - `---` separates .rain documents within a single file
 
-At the time of writing none of these characters are in use in Rainlang proper but
-even if they were their usage is unlikely to cause ambiguity with .rain and
+At the time of writing none of these characters are in use in Rainlang proper
+but even if they were their usage is unlikely to cause ambiguity with .rain and
 Rainlang fragments.
 
 - `---`, `#` and `@` only appear at the root of a .rain document
@@ -240,20 +242,21 @@ Rainlang fragments.
 
 Perhaps we want .rain files to be self describing.
 
-This would be some syntax that tooling can use to autodetect with high confidence
-that the document is a .rain document.
+This would be some syntax that tooling can use to autodetect with high
+confidence that the document is a .rain document.
 
-This process should be O(1) efficient, not relying on tooling to first attempt to
-parse an arbitrary file found in the wild to then decide if it is indeed .rain.
+This process should be O(1) efficient, not relying on tooling to first attempt
+to parse an arbitrary file found in the wild to then decide if it is indeed
+.rain.
 
-For binary data this is relatively easy, we can generate a magic number and start
-the binary with that magic number. Tooling can check the first few bytes in O(1)
-and discard any binary wholesale that isn't a match.
+For binary data this is relatively easy, we can generate a magic number and
+start the binary with that magic number. Tooling can check the first few bytes
+in O(1) and discard any binary wholesale that isn't a match.
 
-Serialization formats often self describe as their problem domain is representing
-data in a portable context. This typically looks like some kind of versioning
-perhaps with a link to the relevant specification, see `<!DOCTYPE>` tag in html
-for an example.
+Serialization formats often self describe as their problem domain is
+representing data in a portable context. This typically looks like some kind of
+versioning perhaps with a link to the relevant specification, see `<!DOCTYPE>`
+tag in html for an example.
 
 Source code is a little messier, for whatever reason it is common for the source
 code to NOT version or describe itself and rely on the compiler or interpreter's
@@ -261,18 +264,19 @@ own version and configuration to control the handling of the source code.
 
 Solidity has `pragma solidity ^0.5.2;` which is a lot better than nothing but
 isn't formally (as far as I know) intended for tooling to _discover_ that a file
-is Solidity. It is an instruction to the `solc` compiler to check _compatibility_
-once the file type is already known. The fact that a solidity `pragma` has the
-word `solidity` in it is our only clue, and we can't read it in O(1) as there is
-no requirement that the document starts with this `pragma` statement.
+is Solidity. It is an instruction to the `solc` compiler to check
+_compatibility_ once the file type is already known. The fact that a solidity
+`pragma` has the word `solidity` in it is our only clue, and we can't read it in
+O(1) as there is no requirement that the document starts with this `pragma`
+statement.
 
-We are dealing with printable ascii in a .rain file so we can't have a real magic
-number, unless we do something that is not noob friendly.
+We are dealing with printable ascii in a .rain file so we can't have a real
+magic number, unless we do something that is not noob friendly.
 
 ## Rainlang fragment
 
-Rainlang fragments are analogous to XML fragments, they are part of a valid
-Rain AST and can be validated e.g. `<1 2>` is a valid fragment but `<1(2` is not.
+Rainlang fragments are analogous to XML fragments, they are part of a valid Rain
+AST and can be validated e.g. `<1 2>` is a valid fragment but `<1(2` is not.
 
 A Rainlang document, much like an XML document, is one that could be deployed to
 an expression deployer and pass integrity checks according to the associated
@@ -294,8 +298,8 @@ A .rain file consists entirely of
 - named rainlang fragments
 - import statements
 
-These both introduce syntax not found in Rainlang proper, i.e. it is NOT valid to
-include either of these within a Rainlang fragment.
+These both introduce syntax not found in Rainlang proper, i.e. it is NOT valid
+to include either of these within a Rainlang fragment.
 
 ### Multidocument files
 
@@ -308,8 +312,8 @@ in some other file, such as in literate programming style.
 
 The triple dash notation is found in yaml and so appears commonly in
 configuration systems, such as embedded front matter in markdown based static
-site generators. Triple dash notation also means "horizontal rule" or "separator"
-in common markdown.
+site generators. Triple dash notation also means "horizontal rule" or
+"separator" in common markdown.
 
 Notably this allows defining and importing several namespaces within a single
 physical file.
@@ -343,8 +347,8 @@ delimiteres of the medium, such as the start/end of the file itself.
 #a 1
 ```
 
-As `---` defines entirely different .rain documents, it allows names to be reused
-in a single file, where they would otherwise have been disallowed due to
+As `---` defines entirely different .rain documents, it allows names to be
+reused in a single file, where they would otherwise have been disallowed due to
 collision/shadowing rules.
 
 ```✅
@@ -357,16 +361,17 @@ collision/shadowing rules.
 
 Named fragments take the form of `#<name><whitespace><fragment>`.
 
-We can say the fragment is _lexically bound_ to the name in the  current .rain
+We can say the fragment is _lexically bound_ to the name in the current .rain
 document, which acts as an anonymous top level _namespace_.
 
-Top level namespaces aren't named until they are imported with a name
-(discussed below).
+Top level namespaces aren't named until they are imported with a name (discussed
+below).
 
 Name bindings are flat within the current namespace. ONLY imports may specify
 sub-namespaces and rebind/rename within them.
 
 ❌
+
 ```
 #a.b 1
 ```
@@ -374,14 +379,15 @@ sub-namespaces and rebind/rename within them.
 The top level of the .rain file is only named fragments.
 
 The choice of `#` is inspired by markdown's header syntax, EDN's tagging, Rust's
-raw literals, etc. It is supposed to convey some kind of feeling of "here is some
-domain specific content and it has a name".
+raw literals, etc. It is supposed to convey some kind of feeling of "here is
+some domain specific content and it has a name".
 
 Anonymous fragments are NOT SUPPORTED.
 
 An example consisting of two fragments, `slow-three` and `multiline-example`.
 
 ✅
+
 ```
 #slow-three add(1 3)
 #multiline-example
@@ -395,11 +401,13 @@ Tooling MUST reject any .rain documents that contain _any_ invalid fragments
 even if the invalid fragments are not ultimately bound to a Rainlang document.
 
 ❌
+
 ```
 #a <1(1
 ```
 
 ✅
+
 ```
 #a <1 1>
 ```
@@ -412,6 +420,7 @@ within a fragment.
 This is binding the name _in_ one fragment to the name _of_ another fragment.
 
 ✅
+
 ```
 #a 1
 #b a
@@ -423,12 +432,14 @@ Circular references are disallowed. Tooling SHOULD reject any circular bindings
 including transitive circular references.
 
 ❌
+
 ```
 #a b
 #b a
 ```
 
 ❌
+
 ```
 #a b
 #b c
@@ -439,7 +450,8 @@ Unbound names are NOT allowed on the RHS although are allowed on the LHS as per
 standard Rainlang rules about input values on the stack for sub-calls.
 
 Template/macro-like logic can be achieved by first binding all the names within
-a namespace then _explicitly rebinding_ names as desired upon import (see below).
+a namespace then _explicitly rebinding_ names as desired upon import (see
+below).
 
 Fragments in .rain files that are intended to be a base for reuse should either
 set sane defaults that can be optionally rebound, or bind to an elided fragment
@@ -447,6 +459,7 @@ set sane defaults that can be optionally rebound, or bind to an elided fragment
 mandatory rebind.
 
 ❌
+
 ```
 #a b
 ```
@@ -456,10 +469,10 @@ mandatory rebind.
 Names can point to elided fragments. This is possible in a .rain document but
 will error if still present in a Rainlang document before deployment.
 
-Fragment elision syntax is `!<message>`. The message is the error message to show
-if the fragment remains elided at the time it needs to be bound. Tooling SHOULD
-provide a generic error message that includes the name bound to the error if
-`<message>` is an empty string.
+Fragment elision syntax is `!<message>`. The message is the error message to
+show if the fragment remains elided at the time it needs to be bound. Tooling
+SHOULD provide a generic error message that includes the name bound to the error
+if `<message>` is an empty string.
 
 `!` is used because it means "pay attention" and "something is wrong" and also
 "logical not". Generally `!` has a sense of negation or something to be avoided.
@@ -469,17 +482,18 @@ effect of disambiguating between multiple possible singletons in the case of
 imported words (discussed below).
 
 The only way to build a Rainlang document from a tree of fragments that include
-an elided fragment is to rebind the elided fragment out of the tree at the import
-level (described below).
+an elided fragment is to rebind the elided fragment out of the tree at the
+import level (described below).
 
 This allows for template/macro like fragments to specify mandatory rebindings
-without relying on an error-prone system such as implicitly unbound names
-(which could be unbound accidentally due to a mere typo).
+without relying on an error-prone system such as implicitly unbound names (which
+could be unbound accidentally due to a mere typo).
 
 This example will error if the tooling attempts to build a document from either
 `#a` or `#b`.
 
 ✅
+
 ```
 #a !must bind a to calculate rate of change
 #b mul(sub(1000000 now()) a)
@@ -489,6 +503,7 @@ The error message can be multiline, it continues until the next top level # or @
 character that signifies a subsequent name/fragment binding or import.
 
 ✅
+
 ```
 #a !
 `a` must be bound so that we can calculate a rate of change in seconds.
@@ -502,11 +517,13 @@ Elided fragments MUST be the root of a fragment, i.e. the first character of an
 elided fragment MUST be `!`. This simplifies tooling implementations.
 
 ❌
+
 ```
 #a <!>
 ```
 
 ❌
+
 ```
 #a foo(!)
 ```
@@ -516,6 +533,7 @@ elided fragment MUST be `!`. This simplifies tooling implementations.
 Shadowing is NOT allowed.
 
 ❌
+
 ```
 #a 1
 #a 2
@@ -527,19 +545,20 @@ the same rule from Rainlang that shadowing is disallowed.
 Every name binding MUST be unique and collisions MUST be handled by either
 renaming in situ or rebinding upon import.
 
-Shadowing is also NOT allowed with names on the LHS in a Rainlang fragment.
-All names MUST be unique.
+Shadowing is also NOT allowed with names on the LHS in a Rainlang fragment. All
+names MUST be unique.
 
 #### Name bindings are unordered
 
-As collisions, shadowing and unbound names are all disallowed the names within
-a .rain file behave like a simple unordered key/value store. Namespaces can be
+As collisions, shadowing and unbound names are all disallowed the names within a
+.rain file behave like a simple unordered key/value store. Namespaces can be
 modelled as a value that is itself a key/value store, recursively.
 
 Tooling MAY implement name bindings as a nested key/value store, and MAY
 implement sorted or unsorted bindings internally.
 
 ✅
+
 ```
 #b a
 #a 1
@@ -568,9 +587,11 @@ This has a few key uses:
 
 Renaming is ONLY possible during import and so is described below.
 
-An example of a fairly standard `call` with operand args `call<index outputs>()`.
+An example of a fairly standard `call` with operand args
+`call<index outputs>()`.
 
 ✅
+
 ```
 #add-five
 i:,
@@ -592,15 +613,15 @@ From the example we can see that tooling will need to
 If a .rain file only consists of named expressions it has no natural/implied
 entrypoint.
 
-Deployed expressions need entrypoints to run, e.g. "calculate order" or
-"handle transfer", which have historically been handled implicitly by index only.
-E.g. the calling contract runs index 0 upon transfer so therefore the rainlang
+Deployed expressions need entrypoints to run, e.g. "calculate order" or "handle
+transfer", which have historically been handled implicitly by index only. E.g.
+the calling contract runs index 0 upon transfer so therefore the rainlang
 representation of the expression MUST put transfer logic at index 0.
 
 While it's very direct and simple to do things this way, there are problems
 
-- It becomes difficult to compose expressions without code stutter/tautology such
-  as "this expression is that expression + this KYC requirement"
+- It becomes difficult to compose expressions without code stutter/tautology
+  such as "this expression is that expression + this KYC requirement"
 - It introduces a split between "header" and "body" of a .rain file if we want
   to support including fragments that aren't intended to be the final deployed
   bytecode
@@ -612,7 +633,7 @@ such that we can _verify and deploy_ the Rainlang fragment as a full Rainlang
 document.
 
 It's highly likely that the tooling-binding process takes strong clues from
-metadata. For example, an orderbook contract may emit "contract metadata" that
+metadata. For example, a raindex contract may emit "contract metadata" that
 states there is an entrypoint called "calculate-order" and so the tooling will
 look for a fragment named `#calculate-order` in the .rain file to bind to the
 indexed entrypoint in the final evaluable config to deploy onchain.
@@ -634,22 +655,24 @@ decimal number etc.
 Namespacing applies equally to words as words are valid fragments, even though
 they are leaves of the AST. This is especially important for extern contracts
 where the implementation of a word MAY be on an onchain contract that is not the
-root interpreter, and so we MAY need to disambiguate between
-e.g. `add` and `my-extern.add`.
+root interpreter, and so we MAY need to disambiguate between e.g. `add` and
+`my-extern.add`.
 
 Namespaces are the standard way to handle name collisions in basically every
 language and data structure.
 
-> Namespaces are one honking great idea -- let's do more of those!
-> The Zen of Python
+> Namespaces are one honking great idea -- let's do more of those! The Zen of
+> Python
 
 ❌
+
 ```
 #a 1
 #a 2
 ```
 
 ✅
+
 ```
 #a 1
 ---
@@ -667,20 +690,21 @@ If the namespace is ommitted that means "import into the current namespace".
 `.` also means "current namespace" where it needs to, or benefits from, being
 made explicit, much like "current directory" in a file system.
 
-Importing is a recursive process and tooling MUST build the tree according
-to the imports but also MUST reject .rain documents that consume too many
-resources to build inn their entirety.
-e.g. due to a malicious structure that is very deep/broad to cheaply recurse.
+Importing is a recursive process and tooling MUST build the tree according to
+the imports but also MUST reject .rain documents that consume too many resources
+to build inn their entirety. e.g. due to a malicious structure that is very
+deep/broad to cheaply recurse.
 
-Import hashes reference _metadata_ so we can colloquially say
-"import a .rain file" but technically we mean "import the metadata the .rain file
-maps to when compiled".
+Import hashes reference _metadata_ so we can colloquially say "import a .rain
+file" but technically we mean "import the metadata the .rain file maps to when
+compiled".
 
 The data is imported from the CAS (separate spec doc) and so tooling guarantees
 that all imports are in one of two possible states:
 
 - Found, local, valid, readable according to self describing properties,
-  supported by the tooling, cryptographic integrity checked according to the hash
+  supported by the tooling, cryptographic integrity checked according to the
+  hash
 - Not found OR found and rejected
 
 If any imports in a tree are in the not found/rejected state, from the
@@ -690,8 +714,8 @@ until/unless it is resolved in a tree during a Rainlang document expansion.
 
 As importing references _metadata_ it can have two possible effects:
 
-- Populating namespaces with named fragments to _build_ metadata that _generates_
-  bytecode when bound to a deployment
+- Populating namespaces with named fragments to _build_ metadata that
+  _generates_ bytecode when bound to a deployment
 - Making metadata available to tooling to _describe_ metadata and/or bytecode
 
 A notable example of a single import that has both effects is op metadata.
@@ -699,8 +723,8 @@ A notable example of a single import that has both effects is op metadata.
 Op metadata
 
 - makes new words available to _build_ rainlang fragments
-- _describes_ how each word functions so that tooling can perform static analysis
-  like balancing LHS and RHS with inputs and outputs, etc.
+- _describes_ how each word functions so that tooling can perform static
+  analysis like balancing LHS and RHS with inputs and outputs, etc.
 
 #### Imports respect namespaces with explicit rebinding
 
@@ -713,6 +737,7 @@ the imported document.
 For example, consider
 
 ✅
+
 ```
 #pi
 /* pi is roughly 3 */
@@ -727,6 +752,7 @@ add(math.pi math.pi)
 This expands to
 
 ✅
+
 ```
 #math.pi
 /* pi is roughly 3 */
@@ -738,12 +764,13 @@ add(math.pi math.pi)
 #### Rebinding names
 
 Imports allow explicit
-[dynamic (re)binding](https://emacswiki.org/emacs/DynamicBindingVsLexicalBinding) of
-values upon import.
+[dynamic (re)binding](https://emacswiki.org/emacs/DynamicBindingVsLexicalBinding)
+of values upon import.
 
 Consider the following .rain files.
 
 ✅
+
 ```
 #pi
 3
@@ -758,6 +785,7 @@ add(pi pi)
 This will expand to
 
 ✅
+
 ```
 #pi
 4
@@ -774,17 +802,18 @@ To support this the import itself can dynamically rebind anything within the
 content of its import.
 
 The syntax for rebinding is a simple whitespace delimited list of key/value
-pairings where the key is the name being rebound and the value is the new binding
-within the current scope.
+pairings where the key is the name being rebound and the value is the new
+binding within the current scope.
 
-The key is relative to the namespace specified after `@` and may optionally begin
-with a `.` character.
+The key is relative to the namespace specified after `@` and may optionally
+begin with a `.` character.
 
-Let's consider some alternate versions that rebind `x.pi` to expand to `4`,
-or `pi` in the root namespace which is bound to `4`, rather than the original
-`3` value.
+Let's consider some alternate versions that rebind `x.pi` to expand to `4`, or
+`pi` in the root namespace which is bound to `4`, rather than the original `3`
+value.
 
 ✅
+
 ```
 #pi 3
 #two-pies add(pi pi)
@@ -802,6 +831,7 @@ Expands to
 ```
 
 ✅
+
 ```
 #pi 3
 #two-pies add(pi pi)
@@ -819,6 +849,7 @@ Expands to
 ```
 
 ✅
+
 ```
 #pi 3
 #two-pies add(pi pi)
@@ -830,6 +861,7 @@ Expands to
 Expands to
 
 ✅
+
 ```
 #pi 4
 #x.pi pi
@@ -847,6 +879,7 @@ Names can be renamed by _rebinding a quoted name_.
 Continuing our example from above
 
 ✅
+
 ```
 #pi 3
 #two-pies add(pi pi)
@@ -858,22 +891,23 @@ Continuing our example from above
 Expands to (note the _key_ change)
 
 ✅
+
 ```
 #pi 4
 #x.phi 3
 #x.two-pies add(x.phi x.phi)
 ```
 
-Note that both the name is renamed (of course) and also all the occurances of the
-name in fragments are renamed. As the goal is to maintain consistency while
-resolving unavoidable naming collisions, this is necessary to preserve
-original behaviours.
+Note that both the name is renamed (of course) and also all the occurances of
+the name in fragments are renamed. As the goal is to maintain consistency while
+resolving unavoidable naming collisions, this is necessary to preserve original
+behaviours.
 
 #### Importing words
 
 Words are also importable and MUST be imported somewhere in the tree of imports
-that is specified upon building a Rainlang document from .rain files and Rainlang
-fragments.
+that is specified upon building a Rainlang document from .rain files and
+Rainlang fragments.
 
 Words are a special case as they are the ultimate leaves of fragments and their
 definition is tightly coupled to the specific interpreter smart contract that
@@ -882,17 +916,19 @@ will run the compiled bytecode from a Rainlang document.
 There are two places that words can be evaluated at runtime onchain:
 
 - Internally to the interpreter that runs `eval` over the expression bytecode
-- Externally to the interpreter on an "extern" contract dispatching a single word
+- Externally to the interpreter on an "extern" contract dispatching a single
+  word
 
 It follows that a Rainlang document can only include a _singleton_ of _internal_
 interpreter words, but MAY consist of arbitrarily many _externs_.
 
-As the internal interpreter words are a singleton they can be referenced globally
-in every namespace. E.g. `add` is just as valid as `a.add` and `b.add`.
+As the internal interpreter words are a singleton they can be referenced
+globally in every namespace. E.g. `add` is just as valid as `a.add` and `b.add`.
 
 This has two key effects
 
-- Every namespace can write unprefixed words, which allows much more concise code
+- Every namespace can write unprefixed words, which allows much more concise
+  code
 - No namespace can accidentally shadow an interpreter word, forcing an explicit
   _renaming_ anywhere there might be a collision
 
@@ -900,6 +936,7 @@ Note that _words cannot be renamed_ so by definition any quoted rename
 (discussed above) will modify a name and NOT a word.
 
 ✅
+
 ```
 /* import words */
 @ 0x..
@@ -917,6 +954,7 @@ The following example introduces ambiguity in `add` in the second .rain doc for
 both itself and the imported document.
 
 ❌
+
 ```
 /* import words */
 @ 0x123..
@@ -937,11 +975,11 @@ both itself and the imported document.
 
 Binding the namespace to an elided fragment elides the words in the namespace.
 This is unambiguous because namespaces cannot shadow names in their parent
-namespace. Words cannot be elided individually because it is not possible to
-run a Rainlang document partially on one interpreter and partially on another.
-While externs technically allow it, we don't want to encourage words from many
-imports polluting the same namespace, so simpler to force elision of all words
-in a namespace together.
+namespace. Words cannot be elided individually because it is not possible to run
+a Rainlang document partially on one interpreter and partially on another. While
+externs technically allow it, we don't want to encourage words from many imports
+polluting the same namespace, so simpler to force elision of all words in a
+namespace together.
 
 This will also elide any extern words in the same namespace. Authors SHOULD
 import words under dedicated namespaces to make this elision process clear for
@@ -951,6 +989,7 @@ same namespace and so cannot be rebound individually.
 The following example will work
 
 ✅
+
 ```
 /* import words */
 @ 0x123..
@@ -977,6 +1016,7 @@ just as easily be `apples`, all that matters is that there's something clearly
 named and later elided.
 
 ✅
+
 ```
 /* import words */
 @words 0x123..
