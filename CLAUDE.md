@@ -20,8 +20,8 @@ standalone spec defining a protocol, format, or subsystem.
   encoding, onchain events)
 - **raindex-yaml.md** — YAML configuration format for Raindex strategies
   (tokens, orders, deployments, scenarios, charts, etc.)
-- **gui.md** — GUI configuration spec: how `raindex-yaml` deployments are
-  presented as interactive UI elements (bindings, deposits, presets)
+- **builder.md** — Builder configuration spec: how `raindex-yaml`
+  configurations are presented and parameterized in the builder
 - **cas.md** — Content Addressable Storage for `.rain` imports (hash-based,
   location-independent)
 - **gas.md** — Analysis of gas costs for an onchain interpreted language vs
@@ -40,7 +40,7 @@ standalone spec defining a protocol, format, or subsystem.
 ## Conventions
 
 - Specs use RFC 2119 language (MUST, SHOULD, MAY) where precision matters.
-- YAML examples in specs (especially `raindex-yaml.md` and `gui.md`) are
+- YAML examples in specs (especially `raindex-yaml.md` and `builder.md`) are
   normative — they define the schema.
 - The `raindex-yaml.md` spec follows explicit design principles: minimal, avoid
   repetition, prefer named k/v sets over lists, flat hierarchies, strict YAML

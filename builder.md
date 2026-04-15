@@ -1,17 +1,17 @@
-# GUI Configuration (`gui`)
+# Builder Configuration (`builder`)
 
 ## Introduction
 
-The `gui` section within the YAML configuration provides metadata specifically tailored for building user interfaces related to Rainlang strategies. It acts as a bridge between the core technical definition of deployments, tokens, orders, etc., and their presentation to an end-user in a graphical application.
+The `builder` section within the YAML configuration provides metadata specifically tailored for building user interfaces related to Rainlang strategies. It acts as a bridge between the core technical definition of deployments, tokens, orders, etc., and their presentation to an end-user in a graphical application.
 
 This section dictates how strategy deployments are named, described, and how their configurable parameters (bindings, deposits, token selections) should be rendered as interactive UI elements. It allows for user-friendly labels, descriptions, default values, and predefined options (presets) to simplify the user experience.
 
-## Top-Level `gui` Object
+## Top-Level `builder` Object
 
-The root of the GUI configuration is the `gui:` key. It contains general information about the strategy or set of deployments described in the file.
+The root of the builder configuration is the `builder:` key. It contains general information about the strategy or set of deployments described in the file.
 
 ```yaml
-gui:
+builder:
   name: Fixed limit
   description: Fixed limit order strategy
   short-description: Buy WETH with USDC on Base.
@@ -23,10 +23,10 @@ gui:
 
 * `name`
   * **Required**: Yes
-  * **Description**: The primary, human-readable name for the overall strategy or configuration presented in the GUI.
+  * **Description**: The primary, human-readable name for the overall strategy or configuration presented in the builder.
 * `description`
   * **Required**: Yes
-  * **Description**: A more detailed description of the strategy or configuration, intended for display in the GUI.
+  * **Description**: A more detailed description of the strategy or configuration, intended for display in the builder.
 * `short-description`
   * **Required**: No
   * **Description**: An optional, concise description, potentially used in contexts where space is limited (e.g., list views, tooltips).
@@ -36,10 +36,10 @@ gui:
 
 ## Deployments Map (`deployments`)
 
-The `deployments` field under `gui` holds a map where each key is the name of a deployment (which must correspond to a deployment defined elsewhere in the configuration, e.g., under the top-level `deployments:` key) and the value is an object defining the GUI configuration specific to that deployment.
+The `deployments` field under `builder` holds a map where each key is the name of a deployment (which must correspond to a deployment defined elsewhere in the configuration, e.g., under the top-level `deployments:` key) and the value is an object defining the builder configuration specific to that deployment.
 
 ```yaml
-gui:
+builder:
   # ... name, description ...
   deployments:
     <deployment-key-1>:
@@ -54,7 +54,7 @@ gui:
 Each entry within the `deployments` map defines the specific UI elements and text for a single deployment.
 
 ```yaml
-gui:
+builder:
   # ...
   deployments:
     some-deployment: # This key must match a defined deployment
@@ -73,7 +73,7 @@ gui:
 
 * `name`
   * **Required**: Yes
-  * **Description**: The name of this specific deployment variation as it should appear in the GUI.
+  * **Description**: The name of this specific deployment variation as it should appear in the builder.
 * `description`
   * **Required**: Yes
   * **Description**: A detailed description for this specific deployment variation.
@@ -166,7 +166,7 @@ fields:
   * **Description**: The name of the binding in the associated Rainlang source code that this field provides the value for.
 * `name`
   * **Required**: Yes
-  * **Description**: The human-readable label displayed for this input field in the GUI.
+  * **Description**: The human-readable label displayed for this input field in the builder.
 * `description`
   * **Required**: No
   * **Description**: An optional, longer description or help text displayed for this field, potentially as a tooltip or helper text.
@@ -227,7 +227,7 @@ select-tokens:
   * **Description**: The key referencing a token defined in the top-level `tokens` section.
 * `name`
   * **Required**: No
-  * **Description**: An optional override for the token's display name specifically within this selection context. If omitted, the GUI would likely use the `label` or `symbol` from the main token definition.
+  * **Description**: An optional override for the token's display name specifically within this selection context. If omitted, the builder would likely use the `label` or `symbol` from the main token definition.
 * `description`
   * **Required**: No
   * **Description**: An optional description providing context for why this token is selectable here.
