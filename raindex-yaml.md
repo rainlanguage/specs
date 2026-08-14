@@ -57,6 +57,11 @@ Optional fields:
 - `label`
 - `network-id`
 - `currency`
+- `block-explorer`
+
+`block-explorer` is the base HTTP(S) URL for the network's preferred block
+explorer. Consumers append resource paths such as `/address/<address>` and
+`/tx/<transaction-hash>` when linking to explorer pages.
 
 ### Chain ID vs Network ID
 
@@ -75,6 +80,7 @@ networks:
       - https://eth.llamarpc.com
       - https://rpc.ankr.com/eth
     chain-id: 0x1
+    block-explorer: https://etherscan.io
 
   classic:
     label: ETH classic
