@@ -140,23 +140,32 @@ repository (the blockchain).
 Here is a table of magic numbers that the tooling maintained by the authors of
 this document are already handling.
 
-| Number             | Interpretation                            |
-| ---                | ---                                       |
-| 0xff0a89c674ee7874 | Prefixes every rain meta document         |
-| 0xffe5ffb4a3ff2cde | Solidity ABIv2                            |
-| 0xffe5282f43e495b4 | Ops meta v1                               |
-| 0xffc21bbf86cc199b | Contract meta v1                          |
-| 0xffe9e3a02ca8e235 | Authoring meta v1                         |
-| 0xff1c198cec3b48a7 | Rainlang v1                               |
-| 0xffdac2f2f37be894 | Dotrain v1                                |
-| 0xffdb988a8cd04d32 | ExpressionDeployerV2 bytecode v1          |
-| 0xff13109e41336ff2 | Rainlang source meta v1                   |
-| 0xff5dcce9b571ba42 | Web data v1                               |
-| 0xffa8e8a9b9cf4a31 | OffchainAsset schema v1                   |
-| 0xff9fae3cc645f463 | OffchainAsset hash list v1                |
-| 0xffc47a6299e8a911 | OffchainAsset structure v1                |
-| 0xff8cd2927c8c86cb | OffchainAsset token image v1              |
-| 0xffbc38eb14ad2209 | OffchainAsset token credential links v1   |
+| Number             | Interpretation                                                                 |
+| ---                | ---                                                                            |
+| 0xff0a89c674ee7874 | Prefixes every rain meta document                                              |
+| 0xffe5ffb4a3ff2cde | Solidity ABIv2                                                                 |
+| 0xffe5282f43e495b4 | Ops meta v1                                                                    |
+| 0xffc21bbf86cc199b | InterpreterCaller meta v1                                                      |
+| 0xffe9e3a02ca8e235 | Authoring meta v1                                                              |
+| 0xff1c198cec3b48a7 | Rainlang v1                                                                    |
+| 0xffdac2f2f37be894 | Dotrain v1                                                                     |
+| 0xffdb988a8cd04d32 | ExpressionDeployerV2 bytecode v1                                               |
+| 0xff13109e41336ff2 | Rainlang source meta v1                                                        |
+| 0xff5dcce9b571ba42 | Web data v1                                                                    |
+| 0xffa8e8a9b9cf4a31 | OffchainAsset schema reference for offchain asset data                         |
+| 0xff9fae3cc645f463 | OffchainAsset IPFS hash list for offchain assets                               |
+| 0xffc47a6299e8a911 | OffchainAsset structured data (e.g. receipt information)                       |
+| 0xff8cd2927c8c86cb | OffchainAsset token image metadata                                             |
+| 0xffbc38eb14ad2209 | OffchainAsset token credential links                                           |
+| 0xff52fe42f1a05093 | Authoring meta v2                                                              |
+| 0xffb2637608c09e38 | Address list meta                                                              |
+| 0xffa15ef0fc437099 | Dotrain source code meta v1                                                    |
+| 0xffda7b2fb167c286 | Order builder state meta v1                                                    |
+| 0xff7a1507ba4419ca | Signed context oracle endpoint v1                                              |
+| 0xffcdcfae6227d5e9 | UTF-8 config name whose keccak256 is a config registry bytes32 name            |
+| 0xffcdb2cc1b1d53be | UTF-8 ABI type string whose keccak256 is a config registry value type hash     |
+| 0xff82e354bb91c055 | UTF-8 namespace whose keccak256 is a migration registry bytes32 namespace      |
+| 0xffae12bf8892cc25 | UTF-8 migration name whose keccak256 is a migration registry bytes32 migration |
 
 This document will be updated as new numbers become known but also feel free to
 build systems and applications with your own numbers and interpretations.
